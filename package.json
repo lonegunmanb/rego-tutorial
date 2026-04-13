@@ -1,0 +1,17 @@
+{
+  "name": "rego-tutorial",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev docs",
+    "build": "vitepress build docs",
+    "preview": "vitepress preview docs",
+    "sync-sidebar": "node scripts/sync-sidebar.mjs",
+    "sync-setup": "node scripts/sync-setup-common.mjs",
+    "prebuild": "node scripts/sync-sidebar.mjs && node scripts/sync-setup-common.mjs"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.4"
+  }
+}

@@ -1,0 +1,109 @@
+# Rego 101 教程大纲（共 12 篇）
+
+## 第 1 篇：Rego 初识：规则与条件赋值（~10 min）
+- Rego 简介、v0/v1 版本差异
+- 教学工具（Playground / conftest）
+- 第一条规则：package、import rego.v1
+- 条件赋值 if {}
+- default 关键字
+- 对应原文章节：Rego 101 → 规则
+
+## 第 2 篇：逻辑运算：与、或、非（~10 min）
+- 逻辑与：多条件并列即为 AND
+- 逻辑或：同名规则实现 OR
+- 不可赋予不同值的约束（eval_conflict_error）
+- 逻辑非：not 关键字
+- 对应原文章节：逻辑与（And）→ 逻辑非（Not）
+
+## 第 3 篇：路径引用与包（Package）（~10 min）
+- 无效路径引用及其等同 false 的行为
+- not input.x == input.x 技巧
+- Package 声明与命名空间
+- import data. 跨包引用
+- 对应原文章节：无效的路径引用 → Package
+
+## 第 4 篇：赋值与局部变量（~10 min）
+- 各种类型赋值（number/string/array/object）
+- 隐式 true（无显式赋值时规则成立返回 true）
+- 局部变量作用域
+- 对应原文章节：赋值语句 → 局部变量
+
+## 第 5 篇：规则条件详解与小测验（~15 min）
+- 四类规则条件
+  - 常规条件（非 false 即成功，无 falsy 概念）
+  - 逻辑非条件（not 与函数调用的反直觉行为）
+  - 赋值语句条件（赋值失败 = 规则失败）
+  - 集合成员条件（in 关键字、索引/键检查、some）
+- 规则条件小测验（13 道判断题 + 5 道输入题）
+- 对应原文章节：不同类型的规则条件 → 规则条件小测验
+
+## 第 6 篇：迭代（Iteration）（~15 min）
+- some/in 迭代集合（set）
+- 迭代数组（键值对形式、_ 占位符）
+- 迭代对象（值、键值对、仅键）
+- 嵌套迭代
+- 自由迭代与 _ 匿名变量
+- 对应原文章节：迭代 → 自由迭代
+
+## 第 7 篇：集合声明与生成表达式（~15 min）
+- JSON 语法声明集合（array/object/set）
+- Rego 表达式在集合中的使用
+- 生成表达式（comprehension）
+  - Set 生成（花括号 {item | ...}）
+  - Array 生成（方括号 [item | ...]）
+  - Object 生成（{key:value | ...}）
+- 对应原文章节：集合（collection）的声明（部分定义之前的部分）
+
+## 第 8 篇：部分定义（Partial Definition）（~15 min）
+- contains 部分定义 Set
+- [] 部分定义 Object
+- v0 deny[msg] 语法 vs v1 contains 语法
+- 带条件的批量部分定义
+- 复杂表达式的部分定义
+- Rego 不支持部分定义数组
+- 对应原文章节：部分定义
+
+## 第 9 篇：内建函数与用户定义函数（~15 min）
+- 常用内建函数
+  - 比较（==, !=, <, >, <=, >=）
+  - 数学计算（+, -, *, /, %, abs, ceil, floor）
+  - 聚合（count, max, min, sum）
+  - 字符串（concat, split, contains, startswith, endswith, upper, lower）
+  - 类型转换（to_number）
+  - 通配符匹配（glob.match）
+  - 字符串插值（sprintf）
+- 用户定义函数语法
+- 函数重载实现逻辑或（IPv4/IPv6 端口提取示例）
+- 对应原文章节：内建函数 → 用户定义函数
+
+## 第 10 篇：every 全量迭代（~15 min）
+- every 关键字与 AllOf 语义
+- every 中多条件（AND）
+- every 中实现逻辑或
+  - 使用 in set 内建运算
+  - 使用 helper 函数（同名函数重载）
+- some + every 组合模式（先筛选再全量校验）
+- 对应原文章节：every 迭代
+
+## 第 11 篇：常见陷阱（上）：类型与比较（~15 min）
+- 集合与集合、对象与对象之间比较大小的陷阱
+- 跨类型比较陷阱（"0" > 3 为 true）
+- 类型安全比较函数的实现
+- 部分定义默认值陷阱（空集合 {} vs 未定义值）
+- 命名遮蔽（Naming Shadowing）陷阱
+  - 用户函数遮蔽内建函数
+  - 操作符函数名遮蔽（gt 等）
+  - 应避免遮蔽的常见名字清单
+- 对应原文章节：Rego 的常见陷阱（前半部分）
+
+## 第 12 篇：常见陷阱（下）：引用与迭代（~15 min）
+- 未声明的迭代变量陷阱
+- 无效路径引用蕴含的陷阱
+  - 空对象绕过检查
+  - not 与布尔值的组合问题
+  - exists(x) 函数技巧
+  - not x == x 判定路径不存在
+- 错别字引发的陷阱
+- 输入数据预校验最佳实践（input_is_valid 模式）
+- 反转含迭代规则的陷阱（!= vs not + helper rule vs every）
+- 对应原文章节：Rego 的常见陷阱（后半部分）

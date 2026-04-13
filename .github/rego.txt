@@ -1,0 +1,2371 @@
+# Rego 101
+
+笔者印象里在很多年以前接触到了 Rego 这门看起来很奇怪的领域特定语言，那时就是为了尝试为 Terraform 编写各种约束策略。但说实话，这门语言显得相当的...反直觉，与常用的命令式语言，以及 Terraform 这样的声明式语言都有不同。多年后的今天，在工作中又要接触到它，区别是这一次必须是深度掌握，需要提供一些能够生成高质量 Rego 代码的工具，于是必须认真学习一下。在学习的过程中我发现目前有关 Rego 的系统性的教程不多，中文的更少。当然我并不是说你在网上能够搜索到的教程都不好，只是阅读以后我发现我仍然会对一些看似很简单的规则运行的结果感到困惑，直到我完成了 [Styra 公司](https://www.styra.com/)的教程以后才感到茅塞顿开。
+
+Strya 就是 Rego 以及 Open Policy Agent（Opa） 背后的公司，位于加州，他们专注于提供策略工具，Opa 就是由他们开发并且维护的开源项目。
+
+有关什么是 Opa 以及 Rego 的介绍，相信中文互联网上已经有不少介绍的文章了，本文就不再赘述，相信尊驾搜索到这里，那可能是觉得其他人的教程中存在不易理解的地方，或者如果你和我一样，都是对于新范式学习起来比较慢的那种人，那么恭喜你，你来对地方了，我向你保证我会用一种极其浅显易懂的方式和节奏为你介绍该如何学习 Rego，这是一篇帮助你从救生圈开始到能够畅快地在 Rego 领域自由泳的教程。
+
+本教程的章节设计和主要内容来自于 [Strya 的教程](https://academy.styra.com/)，倾向于直接学习更优秀的官方教程，或是在阅读过程中对某处有疑问和不解的朋友，完全可以移步官方教程；倘若本文内容与官方教程有矛盾之处，请不用怀疑，那定是本人能力有限所犯下的错误，届时敬请以官方教程为准，先行谢过。此外，由于本教程的目的仅仅是帮助读者摆脱救生圈，所以会聚焦于基础语法，以及一些对初学者来说理解起来有些困难的反直觉的知识点，对于更多的高级内容，例如内建函数、扩展等等将不做涉及。
+
+## Rego 版本
+
+Rego 目前有 `v0` 和 `v1` 两大版本，其中 `v1` 引入了一些破坏性变更语法，这使得目前绝大多数你能找到的教程中的 Rego 代码都无法在 `v1` 版本下运行，这也是我编写教程的原因，本文将采用 `v1` 语法标准。
+
+## 教学工具
+
+我们当然可以安装 Opa 客户端，最简单的方法就是在安装了 go 的机器上运行 `go install github.com/open-policy-agent/opa@latest`，但我不想过多介绍与 Opa 相关的各种工具的细节，让我们用一种更轻量级的方式继续我们的教程：[Opa Playground](https://play.openpolicyagent.org/)
+
+![](https://lonegunman.oss-cn-shanghai.aliyuncs.com/20250220214714.png)
+
+该页面的左边最大的那一块就是代码编辑区，我们的 Rego 代码就存放在这里；右侧上方 INPUT 区域是由 rego 代码处理的输入数据的地方，在实际使用 Opa 时我们检查的各种 Json、Yaml 等结构化数据就存放在这里。OUTPUT 区域是我们的 Rego 代码运行的结果，如果代码顺利运行，那么就会显示输出的数据；如果代码运行出错，那么出错信息就会打印在这里。
+
+这个 Playground 实际上直观地展示了 Opa 中最关键的三个概念：输入数据、规则（策略）、输出数据。请牢记这三个概念，它们将在后面起到很重要的作用。
+
+好了，以上就是在工具方面我们这个 101 教程你所需要了解的全部了。
+
+## 规则
+
+Rego 是一门用来定义规则的语言，但问题是：什么是规则？比如说，红灯停，绿灯行，这是一种规则，但规则的本质是什么？
+
+在我看来，Rego 定义的规则的本质就是，输出数据是否满足某种预期。例如红灯停绿灯行，这里有两个规则，负责“刹车”的控制器只需要观察是否能够看到红灯，有红灯就踩紧刹车；负责“油门”的控制器只需要观察是否能看到绿灯，有绿灯就踩下油门。Opa 规则的本质就是把输入数据根据某种逻辑转换成输出数据，由外部根据输出数据来判断下一步的行为。
+
+例如，我们在 Playground 的代码编辑区里输入以下代码：
+
+```rego
+package play
+
+import rego.v1
+
+allow_review := true
+```
+
+点击右上方 `Evaluate Selection` 按钮(也就是执行按钮)，在 OUTPUT 输出区就会看到：
+
+```json
+{
+    "allow_review": true
+}
+```
+
+输出的是一个 Json 对象，但本质上这是一个由我们的 Opa 策略运行得到的文档。这个文档是怎么被用来当作策略执行的呢？你可以假想这个文档就是一张许可证，上面告诉你，你是否有权就某件商品进行点评，那么结果是 `true`。假设你开发的是一个电商网站，那如何解读这个 `true` 是你的自由，但你现在得到了一个 `true`。
+
+需要特别解释的是，代码中的 `import rego.v1` 代表后续代码将使用 `v1` 版本语法。
+
+那有人就要问了这样简单的事情，我为什么不直接定义一个 Json 对象呢？我为什么需要引入一个新的语言来做呢？
+
+这是因为，Opa 可以进行一些更为复杂的计算，例如：
+
+```Rego
+package play
+
+import rego.v1
+
+allow_review := true if {
+  input.role == "customer"
+}
+```
+
+这里我们使用了“条件赋值”语句，只有在 `if` 后面括号对内的表达式返回 `true` 时该赋值才会发生。`:=` 就是赋值操作符。让我们在 Playground 右上角的 INPUT 里输入这样的 Json：
+
+```json
+{
+    "role": "customer"
+}
+```
+
+点击执行按钮，我们会看到 OUTPUT 区域的输出不变，仍旧是一个包含 `{ "allow_review": true }` 的 Json 对象。但如果我们把 INPUT 区域的 `role` 改成比如 `guest` 再试试：
+
+```json
+{}
+```
+
+OUTPUT 区域我们这次只得到了一个空对象。有些意外，结果不是 `{ "allow_review": false }`，而是空对象，这是因为，`input.role == "customer"` 的结果不为 `true`，所以 `allow_review := true` 这个赋值并没有发生，所以 `allow_review` 并不存在，它没有被定义过。在 Rego 里，一个没被定义过的变量，很多时候也是可以当作 `false` 来对待的，但请注意：“很多时候”。换到红灯停绿灯行的例子里，反过来说就是，没看到红灯，就不要踩刹车；没看到绿灯呢，就不要踩油门。现实世界里并不会有一个`“红灯：false”`这样的状态，但不妨碍我们可以这样理解。
+
+这里我们给 Rego 的“规则”（Rule）下一个定义：在 Rego 中所谓规则就是全局变量。全局变量是否被输出，输出的值是什么，我们如何解释这些输出值，构成了规则体系。
+
+假如我们就是觉得很别扭，就是希望在判断不成立的情况下 `allow_review` 也可以爽快地返回一个 `false`，我们也可以这样：
+
+```rego
+package play
+
+import rego.v1
+
+default allow_review := false
+allow_review := true if {
+  input.role == "customer"
+}
+```
+
+我们给 `allow_review` 设置了一个默认值：`false`，假如后面的规则（`input.role == "customer"`）不成立，那么它就会被赋予默认值：
+
+```json
+{
+    "allow_review": false
+}
+```
+
+## 逻辑与（And）
+
+在绝大多数通用编程语言中，逻辑与由 `&&` 或是 `AND` 关键字来声明，例如：
+
+```java
+if cond1 && cond2
+```
+
+但是 Rego 很特别的一点是，它的逻辑与不是这样的。回到我们刚才的判断是否可以评论的例子，我们现在的条件是，必须角色是顾客，并且声誉必须大于等于 `0`：
+
+```rego
+package play
+
+import rego.v1
+
+allow_review := true if {
+  input.role == "customer"
+  input.reputation >= 0
+}
+```
+
+在 Rego 中，你把判定条件按顺序写出来，它们之间就是逻辑与的关系了。我们试一下这样的一段输入：
+
+```json
+{
+    "role": "customer",
+    "reputation": 10
+}
+```
+
+你会看到 `allow_review` 为 `true`，然而如果 `role` 不为 `"customer"` 或是 `reputation` 为负数时，都不会输出 `allow_review`。
+
+## 逻辑或（Or）
+
+在绝大多数通用编程语言中，逻辑或由 `||` 或是 `OR` 关键字来声明，例如：
+
+```java
+if cond1 || cond2
+```
+
+Rego 中的逻辑或与其他语言大相径庭，或者说，它并没有我们所认为的逻辑或操作符，在 Rego 中实现逻辑或，主要靠的是声明多个重名的规则或是函数来实现的。例如，我们在上面的点评规则基础上扩展一下，假如用户的角色是 `customer` 并且声誉大于等于 `0`，或者用户的角色是 `admin`，那么就可以评论，这个逻辑可以用以下的 Rego 代码实现：
+
+```rego
+package play
+
+import rego.v1
+
+allow_review := true if {
+  valid_user
+}
+
+valid_user := true if {
+  input.role == "customer"
+  input.reputation >= 0
+}
+
+valid_user := true if {
+  input.role == "admin"
+}
+```
+
+尝试用以下输入数据去测试这段规则：
+
+```json
+{
+    "role": "admin"
+}
+```
+
+结果是：
+
+```json
+{
+    "allow_review": true,
+    "valid_user": true
+}
+```
+
+可以把 Rego 中同名的规则想象成并联电路，任意一边成立都可以被视作成立，我们分析以上看到的结果，虽然
+
+```rego
+valid_user := true if {
+  input.role == "customer"
+  input.reputation >= 0
+}
+```
+
+这段规则不成立，`valid_user` 并没有被赋值，但
+
+```rego
+valid_user := true if {
+  input.role == "admin"
+}
+```
+
+这一段规则成立，所以 `valid_user` 被赋值为 `ture`，进而 `allow_review` 也就被赋值为 `true` 了。
+
+## 不可赋予不同的值
+
+在上面的例子里，我们对 `valid_user` 声明了两条赋值规则实现了逻辑或，但无论是哪一条，规则成立时 `valid_user` 的值都是 `true`。假如我们对 `valid_user` 赋予不同的值会发生什么？
+
+这时要分两种情况来看，第一种，两条规则只有一条成立，例如：
+
+```rego
+package play
+
+import rego.v1
+
+result := true if {
+    true
+}
+
+result := false if {
+    1 == 2
+}
+```
+
+两条对 `result` 赋值的规则，第一条的条件为 `true`，所以 `result` 会被赋值为 `true`；`result := false` 这一条分支的规则 `1 == 2` 不成立，所以 `result` 不会被赋值为 `false`。最终结果，`result` 为 `true`。
+
+我们对代码做一点点修改：
+
+```rego
+package play
+
+import rego.v1
+
+result := true if {
+    true
+}
+
+result := false if {
+    true
+}
+```
+
+这时两个规则都是 `true`，`result` 会被赋予两个不同的值，这段代码的执行结果是：
+
+```text
+policy.rego:7: eval_conflict_error: complete rules must not produce multiple outputs
+```
+
+执行报错，提示我们规则不可以产生多个输出，意思就是 `result` 的值只能有一个。
+
+在 Rego 中，对一个规则（上述代码中的 `result`）赋予多个不同的值是一种反模式，请不要这样做，确保代码中同一条规则在任何情况下，要么不成立，要么只会被赋予同样的值。但一种常见的需求是，我们想在规则的不同分支成立时返回不同的值，例如，对各种不合法的输入模式，返回对应的错误信息，比如下面的这个例子：
+
+```rego
+deny contains reason if {
+    resource := input.resource_changes[_]
+    is_in_scope(resource)
+
+    not is_tags_enabled(resource)
+    message := "AWS-ACM-M-1: CA should have tags defined for '%s'."
+    reason := sprintf(message, [resource.address])
+}
+```
+
+我们希望在输入符合某种特定模式时，返回对应的 `reason`，这里 `deny` 是一条类型为 `set` 的规则，我们使用了[“部分定义”](#部分定义)(Partial Definition)，也就是 `deny contains reason if`，我们将在后续章节中对此进行深入介绍。
+
+## 逻辑非（Not）
+
+Rego 中的逻辑非操作与 Python 类似，都是 `not` 关键字。例如以下代码：
+
+```Rego
+package play
+
+import rego.v1
+
+always_false := false
+result := "should_be_true" if {
+	not always_false
+}
+```
+
+`always_false` 是 `false`，所以 `not always_false` 就是 `"should_be_true"`，运行结果是：
+
+```json
+{
+    "always_false": false,
+    "result": "should_be_true"
+}
+```
+
+但是和 Python 不同的是，Python 中逻辑非必须与布尔类型搭配使用，而在 Rego 中 `not` 几乎可以与任意类型的表达式搭配，我们将在[后续章节](#逻辑非条件)中详细介绍。
+
+## 无效的路径引用
+
+Rego 被设计用来检查结构化的、多层级的数据结构，例如下面这段用来控制 K8s 集群的 Rego：
+
+```Rego
+package kubernetes.admission                                                # line 1
+
+deny contains msg if {                                                      # line 2
+    input.request.kind.kind == "Pod"                                        # line 3
+    cpu := input.request.object.spec.containers[_].resources.requests.cpu   # line 4
+    to_number(cpu) > 1                                                      # line 5
+    msg := sprintf("cpu is too high %s", [input.request.metadata.name])     # line 6
+}
+```
+
+这段策略可以被部署到一个 K8s 集群的 [Admission Controllers](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/) 作为 [Gatekeeper](https://open-policy-agent.github.io/gatekeeper) 使用，它的作用就是防止集群中部署的 Pod 里有容器的 `requests.cpu > 1`。这里使用了 `input.request.object.spec.containers[_].resources.requests.cpu` 来读取 `requests.cpu`（请暂时忽视 `containers[_]`，我们将在后续篇章中对此进行详细介绍）。那么假如输入的 Yaml 里，Pod 定义中没有定义 `requests` 时会发生什么？
+
+所以上述策略实际上有一个隐含的条件，那就是输入的 Pod 定义中，必须至少存在一个 `containers` 成员，定义了 `resources.requests.cpu`。假如该条件不成立，那么 `cpu := input.request.object.spec.containers[_].resources.requests.cpu` 里 `cpu` 的值是“无效路径引用”，也就是“未赋值的值”，它等同于 `false`，那么从第五行开始的条件也不用再看了，该规则不成立。
+
+有几种无效路径的例子，例如对于如下输入：
+
+```json
+{
+  "items": [
+    "a-phone",
+    "b-phone"
+  ]
+}
+```
+
+以下 Rego 表达式均属无效路径引用：
+
+* `input.name`
+* `input.name == "Alice"`
+* `input.items[2]`
+
+假如我们想要编写一条规则，判定某属性是否不存在，例如，我们希望在输入数据不包含 `name` 属性时 `no_name` 规则成立，我们可以：
+
+```rego
+no_name := true if {
+    not input.name
+}
+```
+
+假如 `name` 不存在，那么 `input.name` 就是无效路径引用，等同于 `false`，搭配 `not` 就成了 `true`。当然这里实际上隐藏了一个陷阱，我们将在[后续章节](#无效的路径引用蕴含的陷阱)中进行详细描述，这里我们先给出结论：一个更稳妥但很怪异的写法是：
+
+```rego
+no_name := true if {
+    not input.name == input.name
+}
+```
+
+## Package
+
+我们注意到，上面给出的样例 Rego 代码中，第一行基本上都是 `package` 关键字开头的声明，例如 `package play`。Rego 中的策略是以包（Package）为逻辑组合单元的。处于两个不同文件夹，但拥有同名 `package` 的代码在逻辑上处于同一命名空间，就好像它们的代码被声明在同一个代码文件中那样；不同包之间的代码可以通过 `import` 的 `data` 关键字引用，例如：
+
+```rego
+package policy.role
+
+is_customer := true if {
+    input.role == "customer"
+}
+```
+
+```rego
+package main
+import data.policy.role
+
+allow_review := true if {
+    data.policy.role.is_customer
+    input.reputation >= 0
+}
+
+allow_delete := true if {
+    role.is_customer
+}
+```
+
+在第二段 Rego 中我们展示了两种不同的跨包引用，第一种是 `data.policy.role.is_customer`，它使用了完整路径，`data.` 指示 Opa 执行器从 `policy.role` 包中寻找 `is_customer` 规则。
+
+第二种是 `allow_delete` 规则中的 `role.is_customer`，我们可以这样写是因为在代码的头部我们声明了 `import data.policy.role`，于是在后续代码中 `role` 就都指代 `data.policy.role` 了。
+
+## 赋值语句
+
+在我们刚才举得例子里，我们基本上在输出值中赋予的都是布尔（Boolean）值，实际上在这里我们可以赋予任意的 Json 数据类型。例如以下 Rego 代码：
+
+```rego
+package play
+import rego.v1
+
+output1__number := 4
+
+output2__string := "string"
+
+output3__array := ["str1", "str2"]
+
+output4__expression := concat("--", output3__array)  # "str1--str2
+
+output5__expression := abs(1 - 3) * output1__number  # 8 = abs(-2) * 4
+
+output6__string_conditional := "string" if {
+  1 == 1
+}
+
+output7__implicit_true if {    # true
+  1 == 1
+}
+
+output8_map := {
+	"key": "world",
+    "number": 123
+}
+```
+
+输出值为：
+
+```json
+{
+  "output1__number": 4,
+  "output2__string": "string",
+  "output3__array": [
+    "str1",
+    "str2"
+  ],
+  "output4__expression": "str1--str2",
+  "output5__expression": 8,
+  "output6__string_conditional": "string",
+  "output7__implicit_true": true,
+  "output8_map": {
+    "key": "world",
+    "number": 123
+  }
+}
+```
+
+假如一个规则没有显式地赋值，但规则条件成立，那么它会被赋予 `true`，例如：
+
+```rego
+output if {
+    1 == 1
+}
+```
+
+输出值是：
+
+```json
+{
+    "output": true
+}
+```
+
+## 局部变量
+
+和大多数编程语言一样，Rego 也支持在规则或函数内部定义局部变量。局部变量的作用域仅限于声明它的规则或是函数内部。例如以下例子：
+
+```rego
+package play
+import rego.v1
+
+output1 := upper(trimmed_string) if {            # "FOO"
+  starting_string := "  foo  "
+  trimmed_string := trim_space(starting_string)  # "foo"
+}
+
+output2__port_number := port if {     # 80
+  starting_string := "10.0.0.1:80"
+  strings := split(starting_string, ":")  # ["10.0.0.1", "80"]
+  port := to_number(strings[1])      # 80
+}
+```
+
+两条规则内部都有局部变量 `starting_string`，但它们彼此之间不冲突。在各自的作用域内部可以引用这些局部变量，提升代码的可读性。以上代码的执行结果是：
+
+```json
+{
+    "output1": "FOO",
+    "output2__port_number": 80
+}
+```
+
+## 不同类型的规则条件
+
+Rego 中的规则条件可以被分类为以下四类：
+
+* [常规条件](#常规条件)
+* [逻辑非（Not）条件](#逻辑非条件)
+* [赋值语句条件](#赋值语句条件)
+* [集合成员条件](#集合成员条件)
+
+下面我们来一一进行说明。
+
+### 常规条件
+
+常规条件是 Rego 中最常见的一种规则条件，一言以蔽之就是：所有可以成功求值，并且值不为 `false` 的规则条件。以下所有表达式都是效果等同于 `true` 的：
+
+```rego
+all_values_other_than_false_succeed if {
+  true         # true
+  3 == 3       # true
+  "a" == "a"   # true
+  3.14         # number
+  -1           # number
+  abs(-1)      # number
+  3 + 4 * 10   # number
+  "a string"   # string
+  upper("str") # string
+  [1, "a"]     # array
+  {1, "a"}     # set
+  {"k": "v"}   # object
+}
+```
+
+甚至于，以下这些在某些编程语言中被认定为等同于 `false` 的表达式，在 Rego 中也等同于 `true`：
+
+```rego
+even_falsy_values_succeed if {    # ie, there is no falsy in Rego
+  0            # zero
+  ""           # empty string
+  []           # empty array
+  {}           # empty object
+  {1} - {1}    # empty set computed by set difference
+  null         # JSON null value of type null
+}
+```
+
+必须强调的是，所有可以**成功**求值，并且不为 `false` 的表达式，在规则条件中都被认定为等同于 `true`。
+
+产生布尔类型的 `false` 值的表达式被认定等同于 `false`，例如：
+
+```rego
+output1 if {
+  false           # boolean literal false
+}
+
+output2 if {
+  1 == 2          # evaluates to false
+}
+
+output3 if {
+  is_number("a")  # evaluates to false
+}
+```
+
+此外，无法顺利求值的表达式，也等同于 `false`，例如：
+
+```rego
+output4 if {
+  input.no_such_field        # undefined
+}
+
+output5 if {
+  0 / 0                      # undefined
+}
+
+output6 if {
+  to_number("not a number")  # undefined
+}
+```
+
+### 逻辑非条件
+
+规则条件可以通过在表达式前面添加 `not` 关键字实现逻辑取反。简单来讲，`not` 可以把原来失败的条件转化为成功的，把原来成功的条件转化为失败的。以下是一系列通过 `not` 反转后成功的表达式：
+
+```rego
+# negating conditions that fail
+output1__negate_failing_conditions := true if {
+  # every condition in this rule succeeds
+  not false
+  not 1 == 2
+  not input.no_such_path
+}
+```
+
+以下是一系列通过 `not` 关键字取反后失败的表达式：
+
+```rego
+# negating conditions that succeed
+output2__negate_successful_conditions := true if {
+  # every condition in this rule fails
+  not true
+  not 1 == 1
+  not 1
+  not 0
+  not "str"
+  not ""
+  not null
+}
+```
+
+但是请注意，`not` 关键字与函数调用结合使用时，可能触发非常反直觉的结果，我们将在[后续章节](#无效的路径引用蕴含的陷阱)中进行详细介绍，但这里我们先给出一个例子：
+
+```rego
+output1 := true if {
+    not input.no_such_field # 为 `true`，因为无效的路径引用结果被 `not` 取反成为了 `true`
+}
+
+output2 := true if {
+    not upper(input.no_such_field) # 反直觉的是，该表达式的结果是失败，包含函数调用的表达式只要包含无效路径引用，即使有 `not` 也会直接返回失败
+}
+
+helper_rule := upper(input.no_such_field)
+output3 := true if {
+    not helper_rule # 成功，因为无效路径引用只会短路掉函数调用和大多数的操作符，我们可以将该副作用包裹在另一个规则中，配合 `not` 就可以得到成功的结果
+}
+```
+
+### 赋值语句条件
+
+规则中的赋值语句本身也是条件，简单来讲，无法得到有效的值，导致赋值失败，将导致规则失败。下面是一些成功的赋值语句条件的例子：
+
+```rego
+output1__defined_assignments if {
+  var1 := 1 + 2          # defined assignment succeeds
+  var2 := upper("str")   # defined assignment succeeds
+  var3 := false          # even assignment of false succeeds
+}
+```
+
+以下是一些失败的赋值语句导致规则失败的例子：
+
+```rego
+output2__undefined_assignment if {
+  var1 := input.no_such_field        # undefined assignment fails
+}
+
+output3__undefined_assignment if {
+  var2 := 5 / 0                      # undefined assignment fails
+}
+
+output4__undefined_assignment if {
+  var3 := to_number("not a number")  # undefined assignment fails
+}
+```
+
+### 集合成员条件
+
+集合成员条件是检查一个成员，值或映射是否属于某个集合。
+
+最简单的集合成员条件是使用关键字 `in`：
+
+```rego
+# Example data
+set1 := {"member1", "member2"}
+array1 := ["member1", "member2"]
+object1 := {
+ "key1": "value1",
+ "key2": "value2"
+}
+
+# Checking member or value: successes
+output1__member_success if {    # all of the conditions succeed
+  "member1" in set1
+  "member2" in set1
+  "member1" in array1
+  "member2" in array1
+  "value1" in object1
+  "value2" in object1
+}
+
+# Checking member or value: failures
+output2__member_fail if {   # all of the conditions fail
+  "non-member" in set1      # not a member
+  "non-member" in array1    # not a member
+  1 in array1               # 1 in an index but not a member
+  "non-value" in object1    # not a value
+  "key1" in object1         # "key1" is a key but not a value
+}
+```
+
+对于数组和对象，我们有时会需要验证集合的指定位置包含指定的值，也就是数组的指定索引或者映射的指定键返回的值符合预期。我们既可以用 `[]` 操作符，也可以使用 `in` 关键字，以下是一些例子：
+
+```rego
+# Checking that an index:member mapping is in an array or
+# a key:value mapping is in an object
+output3__mapping_success if {  # all of the conditions succeed
+  array1[0] == "member1"       # check array1 maps index 0 to "member1"
+  array1[1] == "member2"       # check array1 maps index 1 to "member2"
+  1, "member2" in array1       # alternate form using the in keyword
+  object1["key1"] == "value1"  # check object1 maps "key1" to "value1"
+  object1["key2"] == "value2"  # check object1 maps "key2" to "value2"
+  "key2", "value2" in object1  # alternative form using the in keyword
+}
+
+output4__mapping_fail if {     # all of the conditions fail
+  array1[1] == "member1"       # index 1 maps to "member2" instead
+  array1[2] == "member1"       # index 2 does not exist
+  object1["key2"] == "value1"  # "key2" maps to "value2" instead
+  object1["key3"] == "value1"  # "key3" does not exist
+}
+```
+
+有时候我们只对键或者值之一感兴趣，这时我们可以使用 `_` 关键字忽略我们不感兴趣的数据。我们在后续的章节中会对 `_` 做更深入的介绍，这里我们先给出一些例子：
+
+```Rego
+# Checking existence of array index or object key
+output5__index_or_key_success if {  # all of the conditions succeed
+  some 0, _ in array1  # index 0 maps to some unspecified _
+  some 1, _ in array1  # index 1 maps to some unspecified _
+  some "key1", _ in object1  # "key1" maps to some unspecified _
+  some "key2", _ in object1  # "key2" maps to some unspecified _
+}
+
+output6__index_or_key_fail if {  # all of the conditions fail
+  some 2, _ in array1        # index 2 does not exist in array1
+  some -1, _ in array1       # index -1 does not exist in array1
+  some "key3", _ in object1  # key "key3" does not exists in object1
+  some 1, _ in object1       # key 1 does not exists in object1
+}
+```
+
+一种反模式是使用 `[]` 来断言映射中存在某个特定键，或是数组中存在某个序号的元素，而不是使用 `some` 关键字。以下例子演示了这种反模式可能引发的问题：
+
+```rego
+# Using [] to check for existence of index or key sometimes fail
+array2 := ["member", false]  # example data
+
+output7__index_or_key_bracket if {
+  array2[0]    # eval to "member"; condition succeeds
+  array2[1]    # eval to false; condition fails
+}
+```
+
+`array2` 应该是包含两个元素的，但由于第二个元素是 `false` 导致规则失败。
+
+## 规则条件小测验
+
+请判断以下条件是否成功：
+
+```rego
+rule1 := true if {
+    true
+}
+
+rule2 := true if {
+    false
+}
+
+rule3 := true if {
+    not true
+}
+
+rule4 := true if {
+    not false
+}
+
+rule5 := true if {
+    null
+}
+
+rule6 := true if {
+    not null
+}
+
+rule7 := true if {
+    100 / 0
+}
+
+rule8 := true if {
+    not 100 / 0
+}
+
+rule9 := true if {
+    var := true
+}
+
+rule10 := true if {
+    var := false
+}
+
+rule11 := true if {
+    var := 100 / 0
+}
+
+rule12 := true if {
+    var := false
+    var
+}
+
+rule13 := true if {
+    var := false
+    not var
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+答案：
+
+1. 成功
+2. 失败
+3. 失败
+4. 成功
+5. 成功
+6. 失败
+7. 失败
+8. 成功
+9. 成功
+10. 成功
+11. 失败
+12. 失败
+13. 成功
+
+以下哪些输入可以使以下规则成功？
+
+```Rego
+output := true if {
+    input.a != input.b
+}
+```
+
+1.
+```json
+{
+    "a": false,
+    "b": false
+}
+```
+
+2.
+```json
+{
+    "a": true,
+    "b": false
+}
+```
+
+3.
+```json
+{
+    "a": false,
+    "b": 100
+}
+```
+
+4.
+```json
+{
+    "a": false
+}
+```
+
+5.
+```json
+{ }
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+答案：`2`、`3`
+
+## 迭代
+
+### 迭代集合
+
+在 Rego 中我们可以使用迭代语法检查集合中的成员是否满足某种规则。比如说我们想要确认一组产品 ID 中是否有至少一个成员以 `-phone` 结尾。常见的迭代语法关键字有 `some` 和 `in`。下面是迭代集合(set)的例子：
+
+```rego
+# Example data
+set1 := {"a-phone", "b-phone", "a-pad"}
+
+# The usual way to introduce an iteration is to use the `some` and `in` keywords to
+# introduce a local variable that ranges over a collection.
+
+output1__set1_has_phone if {        # rule succeeds because the conditions succeed for some item
+  some item in set1
+  endswith(item, "-phone")            # condition succeeds for item "a-phone" or "b-phone"
+}
+
+output2__set1_has_car if {          # rule fails
+  some item in set1
+  endswith(item, "-car")              # condition fails for all item in iteration range
+}
+```
+
+你可以这样去理解 Rego，对集合中每一个成员，它都会尝试将代码向下执行，只要能够有一条执行路径能够成功完成，那么该规则就会返回成功。例如，我们可以用以下规则判定集合中是否存在以 `-phone`，同时又存在以 `-car` 结尾的成员：
+
+```rego
+set1 := {"a-phone", "b-phone", "a-pad", "a-car"}
+
+output1__set1_has_phone_and_car if {
+	some item1 in set1
+    endswith(item1, "-phone")
+    some item2 in set1
+    endswith(item2, "-car")
+}
+```
+
+### 迭代数组
+
+对于数组的迭代，其默认语法与对集合的迭代是一样的：
+
+```Rego
+# Example data
+array1 := ["a-phone", "b-phone", "a-pad"]
+
+output1__array1_has_phone if {  # rule succeeds
+  some item in array1             # iterates over "a-phone", "b-phone", "a-pad"
+  endswith(item, "-phone")        # succeeds for item "a-phone" or "b-phone"
+}
+
+output2__array1_has_car if {    # rule fails
+  some item in array1             # iterates over "a-phone", "b-phone", "a-pad"
+  endswith(item, "-car")          # fails for all item in iteration range
+}
+```
+
+也可以以键值对的形式迭代数组：
+
+```rego
+## Iterating over index:element pairs of an array
+
+array1 := ["a-phone", "b-phone", "a-pad"]  # example data
+
+output1__has_phone_index_above_0 if {  # rule succeeds because all conditions
+                                       # succeed for item "b-phone" at index 1
+  some index, item in array1             # iterates over index:item pairs:
+                                         #   0:"a-phone", 1:"b-phone", 2:"a-pad"
+  endswith(item, "-phone")               # succeeds for 0:"a-phone" and 1:"b-phone"
+  index > 0                              # succeeds for 1:"b-phone" and 2:"a-pad"
+}
+
+output2__has_phone_index_above_1 if {  # rule fails because no index:item pair from
+                                       # array1 satisfies all conditions
+  some index, item in array1             # iterates over index:item pairs:
+                                         #   0:"a-phone", 1:"b-phone", 2:"a-pad"
+  endswith(item, "-phone")               # succeeds for 0:"a-phone" and 1:"b-phone"
+  index > 1                              # succeeds for 2:"a-pad
+}
+```
+
+如果我们感兴趣的只有序号，无所谓内容的话，也可以用 `_` 代替值：
+
+```rego
+## iterating over indexes of an array
+
+array1 := ["a-phone", "b-phone", "a-pad"]  # example data
+
+output1__has_index_above_0 if {         # rule succeeds
+  some index, _ in array1                 # iterates over indexes 0, 1, 2
+  index > 0                               # condition succeeds for indexes 1, 2
+}
+
+output2__has_index_above_2 if {         # rule fails
+  some index, _ in array1                 # iterates over indexes 0, 1, 2
+  index > 2                               # condition fails for all indexes 0, 1, 2
+}
+```
+
+### 迭代对象
+
+迭代对象值的语法与迭代数组与集合的相同：
+
+```rego
+## Iterating over the values of an object
+
+object1 := {          # example data
+ "x-1": "a-phone",
+ "x-2": "b-phone",
+ "y-1": "a-pad"
+}
+
+output1__object1_has_phone if {   # rule succeeds
+  some item in object1              # iterates over "a-phone", "b-phone", "a-pad"
+  endswith(item, "-phone")          # succeeds for item "a-phone" or "b-phone"
+}
+
+output2__object1_has_car if {     # rule fails
+  some item in object1              # iterates over "a-phone", "b-phone", "a-pad"
+  endswith(item, "-car")            # fails for all item in iteration range
+}
+```
+
+也可以用键值对的形式迭代对象：
+
+```rego
+## Iterating over key:value pairs of an object
+
+object1 := {            # example data
+ "x-1": "a-phone",
+ "x-2": "b-phone",
+ "y-1": "a-pad"
+}
+
+output1__has_phone_key_x if {  # rule succeeds because all conditions succeed for
+                               #   "x-1":"a-phone" and "x-2":"b-phone"
+  some key, value in object1     # iterates over key:value pairs:
+                                 #   "x-1":"a-phone", "x-2":"b-phone", "y-1":"a-pad"
+  endswith(value, "-phone")      # succeeds for "x-1":"a-phone" and "x-2":"b-phone"
+  startswith(key, "x-")          # succeeds for "x-1":"a-phone" and "x-2":"b-phone"
+}
+
+output2__has_phone_key_y if {  # rule fails because no key:value pair from object1
+                               #   satisfies all conditions
+  some key, value in object1     # iterates over key:value pairs:
+                                 #   "x-1":"a-phone", "x-2":"b-phone", "y-1":"a-pad"
+  endswith(value, "-phone")      # succeeds for "x-1":"a-phone" and "x-2":"b-phone"
+  startswith(key, "y-")          # succeeds for "y-1":"a-pad"
+}
+```
+
+同样的，也可以用 `_` 代替值：
+
+```Rego
+## Iterating over the keys of an object
+
+object1 := {            # example data
+ "x-1": "a-phone",
+ "x-2": "b-phone",
+ "y-1": "a-pad"
+}
+
+output1__has_key_x if {       # rule succeeds because all conditions succeed
+                              #   for keys "x-1" and "x-2"
+  some key, _ in object1        # iterates over keys "x-1", "x-2", "y-1"
+  startswith(key, "x-")         # succeeds for "x-1" and "x-2"
+}
+
+output2__has_key_y if {       # rule fails because no key satisfies the conidtions
+  some key, _ in object1        # iterates over keys "x-1", "x-2", "y-1"
+  startswith(key, "z-")         # fails for "x-1", "x-2", "y-1"
+}
+```
+
+### 嵌套迭代
+
+Rego 支持多重迭代：
+
+```Rego
+# Example data
+catalog1 := {
+  "x-1": "a-phone",
+  "x-2": "b-phone",
+  "y-1": "a-pad"
+}
+
+catalog2 := {
+  "104": "a-watch",
+  "105": "b-watch",
+  "108": "a-phone"
+}
+
+have_common_item if {       # catalog1 and catalog2 have some item in common
+  some value1 in catalog1
+  some value2 in catalog2
+  value1 == value2
+}
+
+have_common_item_ignore_case if {   # catalog1 and catalog2 have some item in common
+  some value1 in catalog1
+  some value2 in catalog2
+  lower(value1) == lower(value2)
+}
+```
+
+也可以进行嵌套迭代：
+
+```Rego
+# Example data
+catalog := {
+  "x-1": {"name": "a-phone", "suppliers": ["a-corp", "z-corp"]},
+  "x-2": {"name": "b-phone", "suppliers": ["b-corp", "z-corp"]},
+  "y-1": {"name": "a-pad", "suppliers": ["a-corp"]}
+}
+
+has_supplier_b_corp if {       # some product has some supplier "b-corp"
+  some item in catalog
+  some supplier in item.suppliers
+  supplier == "b-corp"
+}
+```
+
+上面这段例子判定 `catalog` 中是否存在元素，其 `suppliers` 中包含 `b-corp`。
+
+### 自由迭代
+
+上述例子中策略作者需要使用局部变量保存中间的迭代变量，必须遵照自顶向下的顺序逐步声明每一层的迭代变量：
+
+```rego
+# Example data
+catalog := {
+  "x-1": {"name": "a-phone", "suppliers": ["a-corp", "z-corp"]},
+  "x-2": {"name": "b-phone", "suppliers": ["b-corp", "z-corp"]},
+  "y-1": {"name": "a-pad", "suppliers": ["a-corp"]}
+}
+
+# standard iteration form
+output1__has_supplier_b_corp if {        # some product has some supplier "b-corp"
+  some item in catalog
+  some supplier in item.suppliers
+  supplier == "b-corp"
+}
+```
+
+但我们可以使用被成为“自由迭代”的形式省略这种对中间变量的声明：
+
+```Rego
+# Example data
+catalog := {
+  "x-1": {"name": "a-phone", "suppliers": ["a-corp", "z-corp"]},
+  "x-2": {"name": "b-phone", "suppliers": ["b-corp", "z-corp"]},
+  "y-1": {"name": "a-pad", "suppliers": ["a-corp"]}
+}
+
+# free-form iteration with declaration
+output2__has_supplier_b_corp if {    # some product has a supplier "b-corp"
+  some id
+  some index
+  catalog[id].suppliers[index] == "b-corp"
+}
+```
+
+有时你会读到类似下面这样的，没有 `some` 声明的自由迭代表达式：
+
+```Rego
+# free-form iteration without declaration (not recommended)
+output3__has_supplier_b_corp if {    # equivalent to output1
+  catalog[id].suppliers[index] == "b-corp"
+}
+```
+
+这种写法源自于早期版本的 Rego，但这种写法极其容易[引发错误](#未声明的迭代变量陷阱)，所以今天强烈不推荐这种写法，但对其稍加改进就可以避免问题：
+
+```Rego
+# free-form iteration using anonymous iteration variable
+output4__has_supplier_b_corp if {    # equivalent to output1
+  catalog[_].suppliers[_] == "b-corp"
+}
+```
+
+你会在表达式中看到多个 `_`，但实际上每个 `_` 都相当于一个独立的 `some` 变量。
+
+## 集合（collection）的声明
+
+Rego 中可以用 Json 语法轻松地声明各种集合：
+
+```Rego
+output1__array := ["a-phone", "b-phone", "a-pad"]  # JSON expression for array
+
+output2__object := {                               # JSON expression for object
+  "x-1": "a-phone",
+  "x-2": "b-phone",
+  "y-1": "a-pad"
+}
+
+output3__envoy_request := {                        # More complex JSON expressions
+  "attributes": {
+    "request": {
+      "http": {
+        "id": "1034715207896934491",
+        "method": "POST",
+        "path": "/catalog/products"
+      }
+    }
+  },
+  "parsed_body": {
+    "items": [
+      { "id": "a-phone", "price": 2000 },
+      { "id": "b-phone", "price": 800 }
+    ]
+  }
+}
+```
+
+同时也集合中使用 Rego 表达式：
+
+```rego
+output4__set := {"a-phone", "b-phone", "a-pad"}    # Rego set enumeration expression
+
+output5__arbitrary_rego_expr := {                  # More complex Rego expression: set of...
+  abs(-100*2 + 3),                                   # a number
+  {"key": 100},                                      # an object
+  output1__array,                                    # the value of a variable (array here)
+  [output2__object, output4__set]                    # an array of of other hierarchical data
+}   # Note: This formatting of the expression being assignned to the output variable sometimes
+    # gets confused for a condition {}-block.
+    # The := assignment operator makes clear this is not the condition block.
+```
+
+当然，我们可以在赋值语句后附带一段条件判断：
+
+```Rego
+# As usual, a condition block may be attached to the assignment to make it conditional
+output6__conditional := {"a-phone", "b-phone", "a-pad"} if {
+  true
+}
+```
+
+以上这些例子都是通过在代码中完整地枚举出集合每一个成员的方式声明集合的，然后在 Rego 中我们可以使用生成表达式更简洁地声明集合，例如：
+
+```rego
+array1 := ["a-phone", "b-phone", "a-pad"]    # example data
+
+output1__set_of_phones := {   # Output: {"a-phone", "b-phone"}
+  item |                        # set of items generated by the conditions
+    some item in array1           # iterates over "a-phone", "b-phone", "a-pad"
+    endswith(item, "-phone")      # condition succeeds for item "a-phone" or "b-phone"
+}
+
+output2__set_of_cars := {     # Output: empty set {} because no item satisfies the condition
+  item |                         # set of items generated generated by the conditions
+    some item in array1            # iterates over "a-phone", "b-phone", "a-pad"
+    endswith(item, "-car")         # condition fails for all item in iteration range
+}
+```
+
+上述例子中，`:=` 右边是花括号，代表我们生成的是 `set` 类型，我们可以通过方括号生成数组类型：
+
+```rego
+output3__array_of_phones := [  # Output: ["a-phone", "b-phone"]
+  item |                         # array of items generated by the conditions
+    some item in array1            # iterates over "a-phone", "b-phone", "a-pad"
+    endswith(item, "-phone")       # condition succeeds for item "a-phone" or "b-phone"
+]
+
+output4__array_of_cars := [    # Output: empty array [] because no item satisfies the condition
+  item |                         # array of items generated by the conditions
+    some item in array1            # iterates over "a-phone", "b-phone", "a-pad"
+    endswith(item, "-car")         # condition fails for all item in iteration range
+]
+```
+
+也可以用下面这种形式来生成对象（或者理解成映射 `map`，本质上它们是同一个东西）：
+
+```rego
+output5__obj_of_phones := {   # Output: {"x-0": "a-phone", "x-1": "b-phone"}
+  key:item |                        # object of key:value pairs generated by the conditions
+    some index, item in array1        # iterates over 0:"a-phone", 1:"b-phone", 2:"a-pad"
+    endswith(item, "-phone")          # condition succeeds for item "a-phone" or "b-phone"
+    key := sprintf("x-%v", [index])   # construct a key of the form "x-n" where n is the index
+}                                   
+
+output6__obj_of_cars := {     # Output: empty obj {} because no item satisfies the condition
+  key:item |                        # object of key:value pairs generated by the conditions
+    some index, item in array1        # iterates over 0:"a-phone", 1:"b-phone", 2:"a-pad"
+    endswith(item, "-car")            # condition fails for all item in iteration range
+    key := sprintf("x-%v", [index])   # construct a key of the form "x-n" where n is the index
+}
+```
+
+### 部分定义
+
+截止到目前为止，我们演示的集合定义语法都是用一条赋值语句完整定义整个集合；在 Rego 还支持“部分定义”，也就是每一条表达式仅定义集合的一部分。以下是部分定义的例子：
+
+```rego
+output1__set := {"a-phone", "b-phone", "a-pad"}    # Complete set definition for reference
+
+# Partial definition of the same end result {"a-phone", "b-phone", "a-pad"},
+# with each statement contributing a single element
+output2__set contains "a-phone"      # partial definition
+output2__set contains "b-phone"      # partial definition
+output2__set contains "a-pad"        # partial definition
+```
+
+在上面的例子中，每一次的 `contains` 表达式都会在 `output2__set` 集合中添加一个对应元素，该集合分三次完成了声明。
+
+很多时候我们会在各种开源的 Opa 代码中看到类似这样的定义：
+
+```rego
+deny[msg] {
+    rule := input.resource.aws_security_group_rule[name]
+    rule.type == "ingress"
+    contains(rule.cidr_blocks[_], "0.0.0.0/0") 
+    msg = sprintf("ASG `%v` defines a fully open ingress", [name])
+}
+```
+
+这种 `deny[msg]` 的语法从直觉上很可能会被理解为类似其他编程语言中的函数，但实际上这是部分定义集合在 Rego `v0` 时代的语法，比如下面的例子就是上面展示的 `output2__set` 集合部分定义在 Rego `v0` 中的对应写法：
+
+```Rego
+# The same definitions using classic syntax without the need for importing future.keywords
+output3__set["a-phone"]      # partial definition
+output3__set["b-phone"]      # partial definition
+output3__set["a-pad"]        # partial definition
+```
+
+现在我们知道了，`deny[msg]` 并非是一个叫 `deny` 的函数接收名为 `msg` 的参数，而是一个名为 `deny` 的集合包含了值为 `msg` 的成员。但是必须要指出的是，该语法在 Rego `v1` 中已被废弃（这也是我起心动念写这篇教程的初衷，因为几乎能找到的所有中文 Rego 教程在这点上都还没有更新）。
+
+但是同样是 `[]` 语法，下面的例子在 `v1` 中是**合法**的：
+
+```rego
+output4__object := {                               # Complete object definition for reference
+  "x-1": "a-phone",
+  "x-2": "b-phone",
+  "y-1": "a-pad"
+}
+
+# Partial definition of the same end result,
+# with each statement contributing a single key:value pair.
+output5__object["x-1"] := "a-phone"      # partial definition
+output5__object["x-2"] := "b-phone"      # partial definition
+output5__object["y-1"] := "a-pad"        # partial definition
+```
+
+`output5__object` 的内容与 `output4__object` 是完全一致的。
+
+我们在部分定义集合时也可以使用任意的 Rego 表达式，以下是一些例子：
+
+```rego
+# As usual, the values used in partial definition may be complex expressions
+output6__set_complex contains abs(-100*2 + 3)  # output of functions
+output6__set_complex contains {"key": 100}     # object
+output6__set_complex contains output1__set     # value of another variable
+output6__set_complex contains [output1__set, output4__object]
+    # array consisting of the values of other variables
+
+output7__object_complex[abs(-100*2 + 3)] := output1__set
+    # key:value pair where
+      # key is the result of abs(-100*2 + 3)
+      # value is the value of output1__set
+output7__object_complex[[output1__set, output4__object]] := {"key": 100}
+    # key:value pair where
+      # key is the array [output1__set, output3__object]
+      # and value is the object {"key": 100}
+```
+
+上面的部分定义例子中，每条规则都定义了集合中的一个成员，但 Rego 也支持用一条部分定义来定义多个成员，例如：
+
+```rego
+array1 := ["a-phone", "b-phone", "a-pad"]    # example data
+
+output1__set_of_phones contains item if {    # set of items that satisfy the conditions
+                                               # {"a-phone", "b-phone"}
+  some item in array1               # iterates over "a-phone", "b-phone", "a-pad"
+  endswith(item, "-phone")          # condition succeeds for item "a-phone" or "b-phone"
+}
+
+output2__set_of_cars contains item if {     # empty set because no item satisfies the condition
+  some item in array1               # iterates over "a-phone", "b-phone", "a-pad"
+  endswith(item, "-car")            # condition fails for all item in iteration range
+}
+```
+
+也可以使用部分定义语法定义一个对象：
+
+```rego
+array1 := ["a-phone", "b-phone", "a-pad"]    # example data
+
+output1__phones[key] := item if {   # object of key:value pairs that satisfy the conditions
+  some index, item in array1        # iterates over 0:"a-phone", 1:"b-phone", 2:"a-pad"
+  endswith(item, "-phone")          # condition succeeds for item "a-phone" or "b-phone"
+  key := sprintf("x-%v", [index])   # construct a key of the form "x-n" where n is the index
+}                                   # Output: {"x-0": "a-phone", "x-1": "b-phone"}
+
+output2__cars[key] := item if {     # empty object; the rule fails for all iteration variables
+  some index, item in array1        # iterates over 0:"a-phone", 1:"b-phone", 2:"a-pad"
+  endswith(item, "-car")            # condition fails for all item in iteration range
+  key := sprintf("x-%v", [index])   # construct a key of the form "x-n" where n is the index
+}                                   # Output: empty object {}
+```
+
+最后需要提醒的是，Rego 不支持通过部分定义来定义数组。
+
+## 内建函数（Builtin Function）
+
+Rego 本身大约有 [100 多个内建函数](https://www.openpolicyagent.org/docs/latest/policy-reference/)可供使用。
+
+* Rego 函数的入参是一份拷贝，对入参值的变更不会泄露到函数作用域以外。
+* 函数不支持可选参数（Optional Arguments），但某些函数支持将对象、数组、集合作为入参。
+* 函数在运行发生错误时会返回未定义值，例如发生了除零错误，或是试图将非数字内容的字符串转为字符
+
+以下是一些最常见的内建函数：
+
+### 比较
+
+是的，Rego 中比较操作符也是函数：`==`, `!=`, `<`, `<=`, `>`, `>=`：
+
+```Rego
+## comparison operators
+## Ref: https://www.openpolicyagent.org/docs/latest/policy-reference/#comparison
+output1__comparison if {  # all the conditions evaluate to true
+  1 == 1
+  2 != 1
+  "abc" == "abc"
+  "abd" != "abc"
+  {1, "a"} == {"a", 1, "a"}
+  {1, "b"} != {"a", 1, "a"}
+  [1, {1, 2}] == [1, {2, 1, 2}]
+  [{1, 2}, 1] != [1, {2, 1, 2}]
+  {"x": 1, "y": 2} == {"y": 2, "x": 1}
+  {"x": 2, "y": 1} != {"y": 2, "x": 1}
+  {"x": 1} != {"y": 2, "x": 1}
+  1 < 3.14
+  3.14 >= 1
+  "abcxx" < "abd"    # lexicographical order
+  "abd" >= "abcxx"   # lexicographical order
+}
+```
+
+### 数学计算
+
+Rego 中，数学计算操作符也是函数：`+`, `-`, `*`, `/`, `%`，当然还有其他数学函数：
+
+```Rego
+## numerical operators/functions
+## Ref: https://www.openpolicyagent.org/docs/latest/policy-reference/#numbers
+output2__arithmetic if {  # all the conditions evaluate to true
+  2 + 1 == 3
+  3 - 2 == 1
+  2 * 3 == 6
+  6 / 3 == 2
+  abs(-3) == 3
+  ceil(-3.14) == -3
+  floor(-3.14) == -4
+}
+```
+
+### 聚合函数
+
+```Rego
+## aggregation
+## Ref: https://www.openpolicyagent.org/docs/latest/policy-reference/#aggregates
+output3__aggregation if {  # all the conditions evaluate to true
+  count("abc") == 3
+  count([1, 3, 9]) == 3
+  max([1, 3, 9]) == 9
+  min([1, 3, 9]) == 1
+  sum([1, 3, 9]) == 13
+}
+```
+
+### 字符串相关函数
+
+```Rego
+## strings
+## Ref: https://www.openpolicyagent.org/docs/latest/policy-reference/#strings
+output4__string_func if {  # all the conditions evaluate to true
+  concat("--", ["a", "b"]) == "a--b"
+  split("a--b", "--") == ["a", "b"]
+  contains("abcdefg", "bc") == true
+  startswith("abcdefg", "abc") == true
+  endswith("abcdefg", "efg") == true
+  upper("abcdefg") == "ABCDEFG"
+  lower("ABCDEFG") == "abcdefg"
+}
+```
+
+### 类型转换
+
+```Rego
+## conversion to number
+## Ref: https://www.openpolicyagent.org/docs/latest/policy-reference/#conversions
+output5__conversion if {  # all the conditions evaluate to true
+  to_number("10") == 10
+  to_number(10) == 10
+  to_number(true) == 1
+  to_number(false) == 0
+}
+```
+
+### 通配符匹配
+
+```Rego
+## glob match
+## Ref: https://www.openpolicyagent.org/docs/latest/policy-reference/#glob
+output6__glob if {  # all the conditions evaluate to true
+  glob.match("*.*.*.*:*", [".", ":"], "10.0.0.1:80") == true
+  glob.match("*.*.*.*:*", [".", ":"], "0.0.1:80") == false      # missing one .
+  glob.match("*.*.*.*:*", [".", ":"], "10.0.0.1:8:0") == false  # delimiter :
+  glob.match("*.*.*.*:*", ["."], "10.0.0.1:8:0") == true        # no delimiter :
+}
+```
+
+### 字符串插值（interpolation）
+
+```Rego
+## sprintf string interpolation
+## Ref: https://www.openpolicyagent.org/docs/latest/policy-reference/#builtin-strings-sprintf
+## Ref: the usage generally follows the Go fmt package https://pkg.go.dev/fmt#hdr-Printing
+output7__sprintf if {  # all the conditions evaluate to true
+  sprintf("%v", [10]) == "10"
+  sprintf("%v-%v-%v", [10, 20, 30]) == "10-20-30"
+  sprintf("%[1]v-%[2]v-%[3]v", [10, 20, 30]) == "10-20-30"
+  sprintf("%[3]v-%[3]v-%[1]v", [10, 20, 30]) == "30-30-10"
+}
+```
+
+## 用户定义函数
+
+如果内建函数不足以满足我们的需求，那么我们还可以自己定义函数。定义函数的语法与部分定义对象的语法十分相近，唯一的区别就是把方括号替换成圆括号：
+
+```Rego
+# User-define function: return the port number of a address string
+# Example: port_number("10.0.0.1:80") is the number 80
+port_number(addr_str) := port if {  # 80
+  strings := split(addr_str, ":")     # ["10.0.0.1", "80"]
+  port := to_number(strings[1])       # 80
+}
+
+# usage example 1
+output1__function_output := port_number("10.0.0.1:80")
+
+# usage example 2
+output2__port_above_70 if {
+  port_number(mock_input.request.addr) > 70
+}
+```
+
+与规则一样，Rego 中也可以重复定义签名完全相同的函数，实现逻辑或的效果，以下是一个从 IPv4 或 IPv6 地址中提取端口号的函数例子：
+
+```Rego
+# User-define function: return the port number of a address string
+# IPv6 example: port_number("[2001:db8::1]:80") is the number 80
+# IPv4 example: port_number("10.0.0.1:80") is the number 80
+
+# IPv4 case
+port_number(addr_str) := port if {      # 80
+  glob.match("*.*.*.*:*", [".", ":"], addr_str)  # validate IPv4:port format
+  strings := split(addr_str, ":")                # ["10.0.0.1", "80"]
+  port := to_number(strings[1])                  # 80
+}
+
+# IPv6 case
+port_number(addr_str) := port if {      # 80
+  parts := split(addr_str, ":")           # ["[2001", "db8", "", "1]", "80"]
+  last_index := count(parts) - 1          # 4
+  startswith(parts[0], "[")               # rudimentary format validation
+  endswith(parts[last_index - 1], "]")    # rudimentary format validation
+  port := to_number(parts[last_index])    # 80
+}
+
+# usage examples
+output1__ipv4 := port_number("10.0.0.1:80")           # 80
+output2__ipv6 := port_number("[2001:db8::1]:80")      # 80
+output3__invalid_param := port_number("10.0.0.1")     # undefined
+output4__invalid_param := port_number("2001:db8::1")  # undefined
+```
+
+从概念上讲，函数的运行原理与部分定义对象非常相似，将一个值映射到另一个值，但有两个主要区别：
+
+1. 函数可以声明多个入参，而对象部分定义中的键是一个值。这种差异其实并不大，因为可以把多个参数包装到一个数组中作为对象键。
+2. 函数可以返回的值的取值范围可能是无限的，因为入参的取值空间是无限的。相反，由 Rego 对象的键必须是有限的。
+
+除了传递到函数的入参外，函数体中还可以访问同一个函数作用域中的所有其他变量，通常有全局变量数据、入参，以及同包中的所有其他规则的返回值。
+
+## `every` 迭代
+
+前面介绍过的 `some` 关键字实现的是 AnyOf 的语义，只要集合中有一个成员可以满足所有条件，规则就可以继续向下执行计算。有时候我们也会需要确保集合中所有成员都满足某种条件时规则才能继续向下计算，以实现 AllOf 语义，例如，只有当购物车内所有的商品都有库存时，才允许提交订单。Rego 对此提供了 `every` 关键字：
+
+```Rego
+nums := {100, 200, 300}  # Example data
+
+output1__every_num_is_above_50 if {  # rule succeeds
+  every num in nums {             # every-condition succeeds
+    num > 50                        # condition succeeds for every num
+  }
+}
+
+output2__every_num_is_above_150 if {  # fail: no assignment to output var
+  every num in nums {              # every-condition fails 
+    num > 150                        # condition fails for 100
+  }
+}
+
+output3__every_num_is_above_50_below_350 if {  # rule succeeds
+  every num in nums {             # every-condition succeeds
+    num > 50                        # condition succeeds for every num
+    num < 350                       # condition succeeds for every num
+  }
+}
+
+output4__every_num_is_above_50_below_250 if {  # fail: no assignment to output var
+  every num in nums {             # every-condition fails
+    num > 50                        # condition succeeds for every num
+    num < 250                       # condition fails for 300
+  }
+}
+```
+
+`every` 表达式只有在集合中每一个成员，都满足了花括号对中每一条规则时才会继续向下执行。
+
+有时，我们可能想检查集合中的每个项目是否一组逻辑或条件。例如，我们可能要检查集合中是否每个数字都是奇数**或**零。我们可能想检查某种类别的商品是否不是红色就是蓝色。
+
+```Rego
+# Example data
+items := {
+  {"id": "a-phone", "color": "red", "type": "phone"},
+  {"id": "b-phone", "color": "red", "type": "phone"},
+  {"id": "a-pad", "color": "red", "type": "tablet"},
+  {"id": "b-pad", "color": "blue", "type": "tablet"}
+}
+
+# Sometimes a built-in function/operator can express an OR-type condition
+every_item_is_red_or_blue if {
+  every item in items {
+    item.color in {"red", "blue"}
+  }
+}
+```
+
+这个例子里我们狡猾地利用了内建函数 `in`(`item.color in {"red", "blue"}`) 实现了逻辑或，要么是红色，要么是蓝色。当然我们也可以声明函数来做到相同的事：
+
+```Rego
+# Example data
+items := {
+  {"id": "a-phone", "color": "red", "type": "phone"},
+  {"id": "b-phone", "color": "red", "type": "phone"},
+  {"id": "a-pad", "color": "red", "type": "tablet"},
+  {"id": "b-pad", "color": "blue", "type": "tablet"}
+}
+
+# helper function
+is_red_or_blue(item) if item.color == "blue"
+is_red_or_blue(item) if item.color == "red"
+
+# main rule
+every_item_is_red_or_blue if {  # rule succeeds
+  every item in items {
+    is_red_or_blue(item)  # helper function defined below
+  }
+}
+```
+
+另一个例子，我们可能想确认一件商品要么不是手机，要么颜色就是红的，换句话说，手机都是红的。
+
+```Rego
+# Example data
+items := {
+  {"id": "a-phone", "color": "red", "type": "phone"},
+  {"id": "b-phone", "color": "red", "type": "phone"},
+  {"id": "a-pad", "color": "red", "type": "tablet"},
+  {"id": "b-pad", "color": "blue", "type": "tablet"}
+}
+
+# helper function
+is_not_phone_or_is_red(item) if not item.type == "phone"
+is_not_phone_or_is_red(item) if item.color == "red"
+
+# main rule
+output1__every_phone_is_red if {  # rule succeeds
+  every item in items {
+    is_not_phone_or_is_red(item)  # helper function defined below
+  }
+}
+```
+
+下面的规则检查条件稍作变化：一件商品要么不是红的，要么就是手机，换句话说，只有手机才可以是红的：
+
+```Rego
+# helper function
+is_not_red_or_is_phone(item) if not item.color == "red"
+is_not_red_or_is_phone(item) if item.type == "phone"
+
+# main rule
+output2__every_red_item_is_phone if {  # rule fails
+  every item in items {
+    is_not_red_or_is_phone(item)  # helper function defined below
+  }
+}
+```
+
+很明显 `output2__every_red_item_is_phone` 规则不成立，因为存在红色的 `tablet`。
+
+下面的例子检查的是：只有 `tablet` 才可以是蓝的：
+
+```Rego
+# helper function
+is_not_blue_or_is_tablet(item) if not item.color == "blue"
+is_not_blue_or_is_tablet(item) if item.type == "tablet"
+
+# main rule
+output3__every_blue_item_is_tablet if {  # rule succeeds
+  every item in items {
+    is_not_blue_or_is_tablet(item)  # helper function defined below
+  }
+}
+```
+
+这种在 `every` 中使用逻辑或的规则也可以用以下这种结合了 `some` 和 `every` 关键字的语法替代：
+
+```Rego
+items := {
+  {"id": "a-phone", "color": "red", "type": "phone"},
+  {"id": "b-phone", "color": "red", "type": "phone"},
+  {"id": "a-pad", "color": "red", "type": "tablet"},
+  {"id": "b-pad", "color": "blue", "type": "tablet"}
+}
+
+output1__every_phone_is_red if {   # rule succeeds
+  phones := {  # a-phone, b-phone
+    item |
+      some item in items
+      item.type == "phone"
+    }
+  every item in phones {
+    item.color == "red"
+  }
+}
+
+output2__every_red_item_is_phone if {  # rule fails
+  red_items := {  # a-phone, b-phone, a-pad
+    item |
+      some item in items
+      item.color == "red"
+    }
+  every item in red_items {
+    item.type == "phone"
+  }
+}
+
+output3__every_blue_item_is_tablet if {  # rule succeeds
+  blue_items := {  # b-pad
+    item |
+      some item in items
+      item.color == "blue"
+    }
+  every item in blue_items {
+    item.type == "tablet"
+  }
+}
+```
+
+## Rego 的常见陷阱
+
+Rego 作为一门有别于传统通用编程语言的领域特定语言，有很多非常特殊的实现细节，撰写 Rego 规则时有一些陷阱，如果没有小心避开，那么可能会在一些意想不到的场景中观察到匪夷所思的结果。这里我们尝试为大家总结一下，请在尝试撰写生产级别的 Rego 规则前**务必先阅读本章**。
+
+### 避免在集合（set）与集合、对象与对象之间比较大小
+
+Rego 中数值类型的比较运算与其他语言基本一致，但在比较非数值类型时，可能会有意想不到的结果。首先我们来看一组相同类型数据间比较的结果：
+
+```Rego
+output1__same_type if {   # all conditions eval to true
+  3 > 1             # standard numerical comparison
+
+  true > false      # true greater than false
+  
+  # strings are lexicographically ordered
+  "b" > "a"         # "b" > "a" because "b" is after "a" in the alphabet
+  "b" > "ac"        # "b" > "a", therefore "b" > "ac"
+  "ada" > "ac"      # "d" > "c", therefore "ada" > "ac"
+  "ba" > "b"        # when one is a prefix of another, the longer string is greater
+
+  # arrays are also lexicographically ordered starting at index 0
+  ["b"] > ["a"]       # "b" > "a", therefore ["b"] > ["a"]
+  ["b"] > ["a", "c"]  # "b" > "a", therefore ["b"] > ["a", "c"]
+  ["a", "d", "a"] > ["a", "c"]  # "d" > "c", therefore ["a", "d", "a"] > ["a", "c"]
+  ["b", "a"] > ["b"]  # when one is a prefix of another, the longer array is greater
+}
+```
+
+上面的例子都好理解，但在集合（set）与集合、对象与对象对象之间比较大小时会有陷阱。数组之间比较大小有确定的规则可以遵循，因为数组成员有非常明确且唯一的顺序，但在比较集合与集合、对象与对象的大小时，成员的顺序是不确定的，也就是说，相同的数据，在不同版本的 Opa 里得到的顺序是可以不同的。
+
+### 避免意外地比较不同类型的数据的大小
+
+绝大多数人都会对 Opa 的一个特性感到十分意外：Opa 中不同类型的数据也是可以比较大小的（这在许多强类型语言中会引发错误），但在 Opa 中，`"0" > 3` 的结果是 `true`。
+
+Opa 中不同类型的数据之间比较大小的规则是：字符串比数值类型大，数值类型比布尔类型大，布尔类型比 `null` 大：
+
+```Rego
+# when comparing between two values of different types, most people would expect the result
+# to be undefined, but in fact OPA imposes a total order between all values regardless of type
+output2__scalar_type_mismatch if {   # all conditions eval to true
+  "a" > 1            # string always greater than number
+  1 > true           # number always greater than boolean
+  true > null        # boolean always greater than null-type
+}
+```
+
+可想而知，这在处理用户输入的数据时可能会因为脏数据而引发非常意外的结果，甚至是完全相反的结果，排除掉某些极其特殊的情况下的有意为之，我们的一条纪律是：避免无意间在不同数据类型之间比较大小，或者说，比较大小前，要首先检查是否是同一种类型。
+
+比如这样：
+
+```Rego
+# allow access if access_level above 3
+allow if {
+  is_number(input.access_level)
+  input.access_level > 3
+}
+
+# but if the input field is not a number as we expect, then bad behavior can happen
+# in this case, when the input is "0" instead of the expected 0, the policy outputs
+# allow being true even though 0 is not above 3.
+mock_input := {"access_level": "0"}
+input := mock_input  # WARNING: shadowing the global variable input is bad practice, done here for illustration only
+```
+
+上面的例子里，在比较大小前先用 `is_number` 函数确认了数据类型，如果不是数值类型就不会进行比对。但这种做法有两个问题
+
+1. 代码中会出现大量冗余的类型检查代码
+2. 很容易忘记添加类型检查
+
+一种更稳妥的做法是定义一组类型安全的比较函数。比如下面的例子，实现了一个类型安全的比较 `>` 的函数：
+
+```Rego
+# define a custom version of greater than which first do a strict
+# validation then perform the comparison
+greater_than(right_param, left_param) := true {
+  strictly_validate_comparison(right_param, left_param)
+  right_param > left_param
+}
+
+greater_than(right_param, left_param) := false {
+  strictly_validate_comparison(right_param, left_param)
+  right_param <= left_param
+}
+
+strictly_validate_comparison(right_param, left_param) := false if {
+  type_name(right_param) != type_name(left_param)
+  print("WARN: comparing type %v against type %v",
+       [type_name(right_param), type_name(left_param)])
+}
+else := false {
+  not type_name(right_param) in {"boolean", "number", "string"}
+  print("WARN: cannot compare type (%v) other than boolean, number, and string",
+        [type_name(right_param)])
+}
+else := true
+```
+
+当类型不一致，或者不应该比较大小时，停止比较并且打印一条警告信息。
+
+上述例子里的自定义比较函数的一个限制是，它不适用于诸如数组之类的集合类型。可以进一步完善函数实现，但是 Rego 语言在我们处理某些深度嵌套的数据结构时限制了最大深度。相比之下，内置的比较函数可用于比较任意深度的嵌套数据。
+
+### 避免使用部分定义的集合的值是否为未定义值作为条件
+
+先回顾一下条件赋值的例子：
+
+```rego
+# recall that if no successful rule assigns to an output variable,
+# that variable has no defined value
+
+output1__number := 1 if {    # rule fails: no assignment
+  1 == 2                        # condition fails
+}
+
+output2__object := {"key1": 1/0} if {    # assignment fails
+  1 == 1                        # condition succeeds
+}
+```
+
+规则定义的条件如果不满足，或是赋值过程发生执行错误，那么规则变量就不会被赋值，所以上面例子中两条规则都不成立，只会输出空文档（规则一中 `1 == 2` 不成立，规则二中 `{"key1": 1/0}` 触发了除零错误）
+
+我们可以使用 `default` 关键字，在规则赋值失败时赋予一个默认值：
+
+```Rego
+# we can use a default assignment to assign a value when there is otherwise none
+output1__number := 1 if {    # rule fails: no assignment
+  1 == 2                        # condition fails
+}
+
+default output1__number := 100   # assigns when no other assignment succeeds
+
+output2__object := {"key1": 1/0} if {    # assignment fails
+  1 == 1                        # condition succeeds
+}
+
+default output2__object := {"key1": 100}   # assigns when no other assignment succeeds
+```
+
+但是并不是只有 `default` 关键字会产生默认值，我们看下面的例子：
+
+```Rego
+# in the case of a partial assignment rule, OPA automatically supplies
+# a default of empty when no assignment rule succeeds
+output1__partial_obj["key1"] := "val1" if {  # rule fails, defaults to empty obj {}
+  1 == 2
+}
+
+# contrast with a complete assignment rule, where there is no value at all
+output2__complete_obj := {"key1": "val1"} if {  # rule fails, no output
+  1 == 2
+}
+```
+
+在上面的例子里，规则一的条件 `1 == 2` 不成立，但意外的是，`output1__partial_obj` 并不是未定义值，而是空集合 `{}`。`output2__complete_obj` 的条件同样不成立，但由于没有使用部分定义语法，所以它是未定义值。
+
+我们在[前面](#常规条件)已经介绍过，Rego 中任何有效的非 `false` 值都可以作为成功条件。 上述例子中两条规则的区别在下面的代码中一览无余：
+
+```Rego
+# this makes a difference when we refer to the output
+output3__partial_obj_exists if {  # rule succeeds
+  output1__partial_obj    # condition succeeds (value is {})
+}
+
+output4__complete_obj_exists if {  # rule fails
+  output2__complete_obj   # condition fails (no value)
+}
+```
+
+即使是 `{}` 空集合也是一个有效值，所以 `output3__partial_obj_exists` 的值为 `true`，而 `output4__complete_obj_exists` 则也是未定义值。
+
+### 小心命名遮蔽（Naming Shadowing）陷阱
+
+和许多的编程语言一样，Rego 支持在子作用域中声明一个与外部作用域变量或函数同名的变量或函数，这叫做命名遮蔽。发生命名遮蔽时，变量或者函数指向的是子域中的实例。我们来看一个例子：
+
+```Rego
+var1 := "hello"      # variable at package-scope
+
+output1 if {         # rule succeeds
+  var1 == "hello"    # var1 refers to the package-scope variable
+                       # condition succeeds
+}
+
+output2 if {         # rule fails
+  var1 := "goodbye"  # introduce a rule-scope variable var1
+  var1 == "hello"    # var1 refers to the rule-scope variable var1
+                       # condition fails
+}
+```
+
+`output2` 中判定 `var1 == "hello"` 时，`var1` 由于命名遮蔽，值已经是子作用域中定义的  `goodbye` 了。
+
+通常命名遮蔽用起来很方便，但有时也会给我们造成麻烦，例如下面这个例子：
+
+```Rego
+output1 := replace("ab", "b", "bc")  # expect result to be "abc"
+```
+
+在这个例子里，我们把 `"ab"` 中的 `b` 替换成 `bc`，期待结果是 `"abc"`，但是如果我们看到结果居然是 `"ab"` 时会不会非常惊讶？这是因为同一个包内还有这样一段用户定义函数：
+
+```rego
+replace(item, old, new) := result if {
+	result := replace_one(item, old, new)
+}
+
+replace_one(item, old, new) := new if {
+  item == old
+}
+
+replace_one(item, old, _) := item if {
+  item != old
+}
+```
+
+如果说上面的例子还很容易理解，那么我们下面再介绍一种更隐蔽的命名遮蔽陷阱。Rego 的内建操作符，包括 `>`、`<`、`>=`、`<=` 等等，本质上都是函数，所以都会有一个对应的函数名，有时我们可能会意外地遮蔽这些函数名，比如：
+
+```Rego
+output2 := (7 > 2022)  # expecting result to be false
+                       # actual result: "Gran Turismo 7 (2022)"
+
+# user-defined function unintentionally shadowing global name for builtin operator >
+gt(version, year) := sprintf("Gran Turismo %v (%v)", [version, year])
+```
+
+上面这个看起来有些滑稽地例子展示了我们的确有可能无意中引入意外的命名遮蔽，导致各种稀奇古怪的错误。为什么 Rego 的命名遮蔽会设计成这样？这是因为：
+
+1. 如果不允许这种遮蔽行为，则每次引入新的全局内建关键字时，所有已经使用该关键字的现有代码文件都需要修改。
+2. 遮蔽行为允许规则作者自由地选择其用户定义的名称。
+3. 在大多数情况下，软件包的作者甚至都不知道被遮蔽的全局名称，也并没有意图使用包中的全局内置函数或变量。因此，不会发生意外行为。
+4. 即使发生了包一级的名称意外遮蔽了全局名称的情况，OPA 的编译时类型检查也能大概率发现问题。
+
+因此，总而言之，只要某处的引用的确是旨在使用用户定义的规则、函数而非全局的规则、函数，那命名遮蔽就不会有什么问题。尽管如此，我们还是应避免遮蔽以下常见的名字：
+
+* `input`
+* `data`
+* `internal`
+* `sprintf`
+* `print`
+* `count`
+* `assign` (`:=`)
+* `equal` (`==`)
+* `eq` (`=`)
+* `neq` (`!=`)
+* `gt` (`>`)
+* `gte` (`>=`)
+* `lt` (`<`)
+* `lt` (`<`)
+* `lte` (`<=`)
+* `plus` (`+`)
+* `minus` (`-`)
+* `mul` (`*`)
+* `div` (`/`)
+* `rem` (`%`)
+* `and` (`&`) [set intersection]
+* `or` (`|`) [set union]
+
+以下是一份 Opa `0.45.0` 版本时完整的全局名字列表：
+
+* `abs`
+* `all`
+* `and`
+* `any`
+* `array`
+* `assign`
+* `bits`
+* `cast_array`
+* `cast_boolean`
+* `cast_null`
+* `cast_object`
+* `cast_set`
+* `cast_string`
+* `ceil`
+* `concat`
+* `contains`
+* `count`
+* `crypto`
+* `data`
+* `div`
+* `endswith`
+* `eq`
+* `equal`
+* `floor`
+* `format_int`
+* `glob`
+* `graph`
+* `graphql`
+* `gt`
+* `gte`
+* `hex`
+* `http`
+* `indexof`
+* `indexof_n`
+* `input`
+* `internal`
+* `intersection`
+* `io`
+* `is_array`
+* `is_boolean`
+* `is_null`
+* `is_number`
+* `is_object`
+* `is_set`
+* `is_string`
+* `json`
+* `lower`
+* `lt`
+* `lte`
+* `max`
+* `min`
+* `minus`
+* `mul`
+* `neq`
+* `net`
+* `numbers`
+* `object`
+* `opa`
+* `or`
+* `plus`
+* `print`
+* `product`
+* `rand`
+* `re_match`
+* `regex`
+* `rego`
+* `rem`
+* `replace`
+* `round`
+* `semver`
+* `set_diff`
+* `sort`
+* `split`
+* `sprintf`
+* `startswith`
+* `strings`
+* `substring`
+* `sum`
+* `time`
+* `to_number`
+* `trace`
+* `trim`
+* `trim_left`
+* `trim_prefix`
+* `trim_right`
+* `trim_space`
+* `trim_suffix`
+* `type_name`
+* `union`
+* `units`
+* `upper`
+* `urlquery`
+* `uuid`
+* `walk`
+* `yaml`
+
+### 未声明的迭代变量陷阱
+
+```Rego
+array1 := ["a", "b", "c"]   # example data
+
+# this is an iteration over the array with the iteration variable i
+output1__array1_has_a if {  # rule succeeds
+  array1[i] == "a"    # condition succeeds for i=0
+}
+```
+
+在上面这个例子里，`array1[i]` 的 `i` 是一个未经 `some` 关键字声明的局部变量，通常来说这段代码的结果如同我们预期的那样，判定 `array1` 中是否包含成员 `"a"`。但是如果下面这段看起来几乎一模一样的规则产生了完全不同的结果时，我们大概率会大感震惊：
+
+```Rego
+# this is the exact same rule as above except the iteration variable is x
+# but surprisingly, this rule does not succeed! Why?
+# It's because in the other module `module2.rego` of this package, x is
+# assigned the value 2
+output2__array1_has_a if {  # rule fails
+  array1[x] == "a"    # condition is checked for x=2 only; fails
+}
+```
+
+如果我们发现只是把 `i` 替换成 `x` 就能导致不同的结果时，估计换做是谁都会感到百思不得其解，但真相是同名的包里的另一个代码文件中有这样一段代码：
+
+```Rego
+x := 2 if {
+  1 == 1
+}
+```
+
+`x` 实际上是一个全局变量，值被设置为 `2`，所以 `array1[x] == "a"` 实际上判断的是 `array1[2] == "a"`。因为这种迭代器变量未经声明，所以并没有如预期般遮蔽全局名字，引发了这个问题。
+
+当 Opa 在执行规则时遇到一个变量名称时，会按照如下顺序尝试将解析该名称：：局部变量（当前规则或函数作用域内的局部变量）、包一级变量、全局变量。如果找不到这样的变量，OPA将在当前作用域中创建一个新的本地变量（通常是当前规则作用域内）。
+
+因为存在这样的陷阱，所以我们推荐在使用迭代变量之前要先声明，以达到用局部变量遮断外部同名变量的效果，例如：
+
+```Rego
+# one solution to prevent this type of error is to always declare iteration variables
+# even when the declaration is technically optional
+output3__array1_has_a if {  # rule succeeds
+  some x            # explicit local variable shadows the package-scoped variable x
+  array1[x] == "a"  # condition succeeds for i=0
+}
+
+output4__array1_has_a if {
+  some item in array1  # explicit local variable `item`
+  item == "a"
+}
+```
+
+或是使用 `_` 作为迭代变量：
+
+```Rego
+output5__array1_has_a if {  # rule succeeds
+  array1[_] == "a"  # condition succeeds for i=0
+}
+```
+
+### 无效的路径引用蕴含的陷阱
+
+我们在前面介绍过[无效的路径引用](#无效的路径引用)。让我们看下面的这个例子：
+
+```Rego
+deny_access if {
+  input.access_level < 3
+}
+```
+
+如果输入数据的 `access_level` 低于 `3` 则拒绝访问。假如输入数据是一个空对象 `{}` 时会发生什么？那么 `input.access_level` 会是一个无效的路径引用，这时整个规则计算会被打断，`deny_access` 会是未定义值，而如果我们判定的标注是 `deny_access` 为 `true` 时阻止访问的话，那么显然一个空对象就可以绕过我们设置的检查。
+
+为了防止这种意外的行为，可以再为该字段缺失的情况的显式声明一条策略，并确保应用程序或服务在遇到这种 `deny_access` 值时可以正确处理错误情况：
+
+```Rego
+deny_access if {
+  input.access_level < 3
+}
+
+deny_access := "Error: access_level missing" if {
+  not input.access_level
+}
+```
+
+假如我们收到空对象，那么 `input.access_level` 是无效路径引用，而加上 `not` 则被反转成 `true`。
+
+很自然地我们会认为，可以通过 `not` 关键字搭配某个引用路径来实现对无效路径引用的判定，但是这种方式在遇到布尔类型时会产生问题。例如还是上面的例子，如果输入不再是空对象 `{}`，而是这样的一个对象：`{ "access_level": true }`，那么 `input.access_level` 的值就是 `true`，被 `not` 反转后就成了 `false`，于是又会被判定为可以访问了。
+
+一种用来判定路径存在的技巧是编写一个这样的函数：
+
+```Rego
+exists(x) if {
+    x == x
+}
+
+is_admin_exists if {
+    exists(input.admin)
+}
+```
+
+1. 假如 `input.admin` 不存在，那么 `exists(input.admin)` 会直接失败
+2. 假如 `input.admin` 存在，但值为 `false`，那么 `exists` 函数中 `false == false` 的结果是 `true`
+3. 假如 `input.admin` 存在，值为 `true`，那么 `exists` 函数中 `true == true` 的结果还是 `true`
+
+看起来 `exists` 函数的确可以在各种情况下如同预期一般工作。
+
+那么假如说我们的规则必须是 `input.admin` 不存在时成立呢？比如：
+
+```Rego
+is_admin_absent if {
+    not exists(input.admin)
+}
+```
+
+这个规则有没有问题？我们看，假如 `input.admin` 是无效路径引用，那么 `not exists(input.admin)` 整体会求值失败，即使我们在头部添加了 `not`，所以 `is_admin_absent` 在这时**不是** `true`。
+
+我们[前面](#逻辑非条件)提过：
+
+>包含函数调用的表达式只要包含无效路径引用，即使有 `not` 也会直接返回失败
+
+但是 Rego 奇葩地留了两个例外：`==` 和 `=` 除外，也就是说，假如 `==` 和 `=` 表达式中包含无效路径引用时，其值为未定义值，等同于 `false`，但是可以通过头部添加的 `not` 反转为 `true`。所以，我们可以用下面的表达式来实现“某路径不存在”的判断：
+
+```Rego
+is_admin_absent if {
+    not input.admin == input.admin
+}
+```
+
+### 错别字引发的陷阱
+
+Rego 这一门语言与其他语言相比还有一个及其特别之处，就是如果我们撰写代码时输入了错别字，很可能是不会引发语法检查错误的（我自己经常犯）。例如：
+
+打错字段名称（例如 `input.payload.times` 打成了 `input.payload.itmes`）
+打错路径（例如 `input.payload.items` 打成 `input.items`）
+搞错字段单数复数（例如 `input.payload.items` 打成了 `input.payload.item`）
+搞错字段的类型（例如把数值类型看成了字符串，把数组看成了单个成员类型）
+
+为了避免这种错误，我们应该善于使用 Opa 命令行工具提供的输入数据结构检查功能以及测试功能，但本文不作详细描述。一个好习惯是所有撰写的策略在部署到生产环境之前，都要运行完整的单元测试以确认在各种分支条件下的正确性。
+
+### 好习惯：对输入数据进行预校验
+
+除了一个引用路径是否存在之外，输入数据还有可能以其他方式引发出人意料的错误，例如数据字段可能具有与期望不同的类型或格式。下面，我们将研究一个验证使用 Rego 访问的数据的例子。
+
+首先给出一个我们期待的输入的例子，描述了把一组物品添加到某个类别下的请求：
+
+```Rego
+example_input := {
+    "user": {
+      "access_level": 2
+    },
+    "path": "/catalog",
+    "payload": {
+      "items": [
+        {
+          "id": "a-phone",
+          "type": "phone",
+          "price": 1000},
+        {
+          "id": "b-phone",
+          "type": "phone",
+          "price": 500},
+        {
+          "id": "a-pad",
+          "type": "tablet",
+          "price": 2000}
+      ]}}
+```
+
+在我们撰写具体的规则之前，我们应该首先撰写对输入数据进行预校验的代码：
+
+```Rego
+input_is_valid if {
+  is_number(input.user.access_level)
+  glob.match("/**", ["/"], input.path)
+  every item in input.payload.items {
+    item_is_valid(item)
+  }
+}
+
+item_is_valid(item) := true if {
+  item.type in {"phone", "tablet", "accessory"}
+  is_number(item.price)
+  item.price >= 0
+  id_is_valid(item.id)
+}
+
+id_is_valid(id) := true if {  # string case
+  is_string(id)
+  glob.match(`?*-?*`, ["-"], id)  # two nonempty strings separated by -
+}
+
+id_is_valid(id) := true {  # number case
+  is_number(id)
+  id == round(id)  # is integer
+  id > 0           # is positive
+}
+```
+
+然后是检验规则本身：
+
+```Rego
+policy_allow if {
+  input.user.access_level >= 1
+  every item in input.payload.items {
+    item.price <= 1000
+  }
+}
+
+policy_allow if {
+  input.user.access_level >= 2
+  every item in input.payload.items {
+    item.price <= 2000
+  }
+}
+
+allow if {
+  input_is_valid == true
+  policy_allow == true
+}
+```
+
+假如数据格式与预期不符，那么在 `input_is_valid == true` 阶段我们就返回失败了。
+
+### 反转含迭代的规则时的陷阱
+
+考虑这样一个规则，用来测试数组中是否含有元素 `a`：
+
+```Rego
+array1 := ["a", "b"]
+
+output1_has_a is {
+    array1[i] == "a"
+}
+```
+
+该规则的含义是“数组中包含成员 `a`”。假如我们想要写一条规则，是与上述规则正好相反的呢，我们可能会写成这样：
+
+```Rego
+output2_does_not_has_a is {
+    array1[i] != "a"
+}
+```
+
+但实际上这条规则的实现是错误的，该逻辑其实是 “`array1` 中包含至少一个不是 `a` 的元素”，`["a", "b"]` 是可以通过该条规则检测的，因为其中包含 `b`。我们应该实现的逻辑含义应该是“数组中不包含 `a`”
+
+同样不正确的实现还有这样的：
+
+```Rego
+output3_does_not_has_a is {
+    some i
+    array1[i] != "a"
+}
+
+output4_does_not_has_a is {
+    some item in array1
+    item != "a"
+}
+```
+
+它们实现的都是“`array1` 中包含至少一个不是 `a` 的元素”。
+
+最直截了当的正确实现是：
+
+```Rego
+output1_has_a is {
+    array1[i] == "a"
+}
+
+output5_does_not_has_a is {
+    not output1_has_a
+}
+```
+
+让我们列一下各种输入数据搭配以上各条规则时的真值表：
+
+| 规则                                  | 规则含义        | `array1 := ["a"]` | `array1 := ["b"]` | `array1 := ["a", "b"]` | `array1 := []` |
+|-------------------------------------|-------------|-------------------|-------------------| ---------------------- | -------------- |
+| output1                             | 数组中含有 `a`   | 成功                | 失败                | 成功 | 失败 |
+| output2 <br/> output3 <br/> output4 | 数组中含有不是 `a` | 失败                | 成功                | 成功 | 失败 |
+| output5 | 数组中不含有 `a` | 失败 | 成功 | 失败 | 成功 |
+
+如果规则作者希望能够不求助于额外的帮助规则实现 `output5` 的等价实现，也可以使用 `every` 关键字：
+
+```Rego
+output6_does_not_has_a if {
+    every item in array1 {
+        item != "a"
+    }
+}
+```
+
+## 后记
+
+最近做了不少与 Opa 规则相关的工作，深感 Rego 是一门相当奇葩的语言，从一开始的摸不着头脑，到中间时不时看到令人震惊的结果，到学完 Styra 编写的教程后的恍然大悟，起心动念写下该中文教程，期望能够帮助到有需要的人。
+
+最近公开写作非常少，已经好几个月没有发表文章了，并非是我偷懒，汇报下最近的情况，第一是仍然在深度参与 [Azure Verified Module](https://aka.ms/avm) 项目，努力为社区提供更多更好用的 Terraform 方面的资源，二是去年收了一个可爱的干女儿，我查了下如果在英语世界里应该算作 GodDaughter 教女，我算教父？但是我第一不信教，第二不是黑手党（马龙白兰度哈哈哈），我只是纯粹地喜爱和疼爱这个与我有很深缘分的孩子，所以每天下班后，还要抽一些时间远程辅导功课或是授课，留给我自己的阅读学习写作时间就进一步被压缩了。仅以该文作为最近的一点补交的寒假作业吧，期待后续能够更好地平衡自己的时间，能够为中文社区继续提供更多优质的内容。
+
+谨以此文献给我的女儿，名字可以是 Angelia，可以是 su，但我还是比较喜欢柚，这代表一个只有我们俩才懂的梗 :D
