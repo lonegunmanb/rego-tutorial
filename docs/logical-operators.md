@@ -211,4 +211,4 @@ output3 := true if {
 
 ## 动手实验
 
-<KillercodaEmbed src="https://killercoda.com/lonegunmanb/course/rego-tutorial/rego-logical-operators" />
+<KillercodaEmbed src="https://killercoda.com/rego-tutorial/course/rego-tutorial/rego-logical-operators" />

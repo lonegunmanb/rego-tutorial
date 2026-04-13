@@ -112,4 +112,4 @@ allow_review := true if {
 
 ## 动手实验
 
-<KillercodaEmbed src="https://killercoda.com/lonegunmanb/course/rego-tutorial/rego-rules-and-assignment" />
+<KillercodaEmbed src="https://killercoda.com/rego-tutorial/course/rego-tutorial/rego-rules-and-assignment" />
