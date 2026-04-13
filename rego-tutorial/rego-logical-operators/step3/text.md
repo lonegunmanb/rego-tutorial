@@ -24,6 +24,10 @@ result := "yes" if {
 result := "no" if {
     1 == 2
 }
+
+warn contains msg if {
+    msg := sprintf("result = %s", [result])
+}
 EOF
 ```
 
@@ -34,10 +38,10 @@ EOF
 ```
 
 ```bash
-conftest test input.json -p policy/ --all-namespaces
+conftest test input.json -p policy/
 ```
 
-只有第一条规则成立，所以 `result` 为 `"yes"`，运行正常。
+只有第一条规则成立，所以 `result` 为 `"yes"`，运行正常。你应该能看到一条警告显示 `result = yes`。
 
 ## 两条规则都成立时——冲突错误
 
@@ -60,7 +64,7 @@ EOF
 ```
 
 ```bash
-conftest test input.json -p policy/ --all-namespaces
+conftest test input.json -p policy/
 ```
 
 你会看到一个错误：

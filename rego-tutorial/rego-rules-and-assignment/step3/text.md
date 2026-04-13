@@ -75,9 +75,9 @@ conftest test main.tf -p policy/
 
 这次应该会看到检查通过的输出。
 
-## 添加 default 规则
+## 添加 tags 检查策略
 
-让我们再添加一条策略，确保所有实例都定义了 `tags`，并使用 `default` 提供明确的输出：
+让我们再添加一条策略，确保所有实例都定义了 `tags`：
 
 ```bash
 cat > policy/tags.rego << 'EOF'
@@ -85,10 +85,9 @@ package main
 
 import rego.v1
 
-default has_tags := false
-
-has_tags := true if {
-  count(input.resource.aws_instance[_].tags) > 0
+deny contains "实例缺少 tags 定义" if {
+  some name, instance in input.resource.aws_instance
+  not instance.tags
 }
 EOF
 ```
@@ -96,7 +95,26 @@ EOF
 运行检查：
 
 ```bash
-conftest test main.tf -p policy/ --all-namespaces
+conftest test main.tf -p policy/
 ```
 
-你可以尝试删除 `main.tf` 中的 `tags` 块，再运行一次看看 `has_tags` 的变化。
+当前的 `main.tf` 有 `tags`，所以检查通过。
+
+现在试试删掉 `tags`：
+
+```bash
+cat > main.tf << 'EOF'
+resource "aws_instance" "example" {
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = "t3.medium"
+}
+EOF
+```
+
+再运行一次：
+
+```bash
+conftest test main.tf -p policy/
+```
+
+你应该看到"实例缺少 tags 定义"的失败信息。这就是 `deny` 规则配合 `not` 的实际应用——我们将在下一章详细学习 `not` 和其他逻辑运算符。

@@ -6,12 +6,16 @@
 
 ```bash
 cat > policy/play.rego << 'EOF'
-package play
+package main
 
 import rego.v1
 
 allow_review := true if {
   input.role == "customer"
+}
+
+warn contains "allow_review = true" if {
+  allow_review
 }
 EOF
 ```
@@ -31,8 +35,10 @@ EOF
 运行 conftest 测试：
 
 ```bash
-conftest test input.json -p policy/ --all-namespaces
+conftest test input.json -p policy/
 ```
+
+你应该能看到一条警告，说明 `allow_review` 的值为 `true`。
 
 现在把输入改成 `guest`：
 
@@ -47,10 +53,10 @@ EOF
 再运行一次：
 
 ```bash
-conftest test input.json -p policy/ --all-namespaces
+conftest test input.json -p policy/
 ```
 
-你会发现，当 `role` 不是 `customer` 时，`allow_review` 并不存在于输出中——它不是 `false`，而是**未定义**。这是 Rego 的一个重要特性：条件不成立时，赋值不会发生，变量不会被定义。
+你会发现，这次没有任何警告输出——当 `role` 不是 `customer` 时，`allow_review` 的赋值并没有发生，变量**未定义**。这是 Rego 的一个重要特性：条件不成立时，赋值不会发生，变量不会被定义。
 
 ## default 关键字
 
@@ -58,7 +64,7 @@ conftest test input.json -p policy/ --all-namespaces
 
 ```bash
 cat > policy/play.rego << 'EOF'
-package play
+package main
 
 import rego.v1
 
@@ -66,6 +72,10 @@ default allow_review := false
 
 allow_review := true if {
   input.role == "customer"
+}
+
+warn contains msg if {
+  msg := sprintf("allow_review = %v", [allow_review])
 }
 EOF
 ```
@@ -75,10 +85,10 @@ EOF
 用 `guest` 的输入测试一下：
 
 ```bash
-conftest test input.json -p policy/ --all-namespaces
+conftest test input.json -p policy/
 ```
 
-现在即使条件不成立，`allow_review` 也会出现在输出中，值为 `false`。
+现在即使条件不成立，你也能看到警告信息显示 `allow_review = false`——变量有了明确的默认值。
 
 再换回 `customer` 试试：
 
@@ -88,7 +98,13 @@ cat > input.json << 'EOF'
     "role": "customer"
 }
 EOF
-conftest test input.json -p policy/ --all-namespaces
+conftest test input.json -p policy/
 ```
 
 条件成立时，`allow_review` 的值为 `true`，覆盖了默认值。
+
+## 清理
+
+```bash
+rm -f policy/play.rego input.json
+```

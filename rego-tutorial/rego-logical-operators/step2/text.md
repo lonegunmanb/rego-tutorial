@@ -33,10 +33,14 @@ valid_user := true if {
 valid_user := true if {
   input.role == "admin"
 }
+
+deny contains "不允许评论" if {
+  not allow_review
+}
 EOF
 ```
 
-这里 `valid_user` 有两条规则定义，任意一条成立都会使 `valid_user` 被赋值为 `true`。
+这里 `valid_user` 有两条规则定义，任意一条成立都会使 `valid_user` 被赋值为 `true`。我们用 `deny` 规则在不允许评论时输出拒绝信息。
 
 ## 测试：customer 路径
 
@@ -50,10 +54,10 @@ EOF
 ```
 
 ```bash
-conftest test input.json -p policy/ --all-namespaces
+conftest test input.json -p policy/
 ```
 
-`allow_review` 为 `true`——因为 customer 路径成立。
+检查通过——customer 路径成立，`allow_review` 为 `true`，`deny` 不触发。
 
 ## 测试：admin 路径
 
@@ -66,10 +70,10 @@ EOF
 ```
 
 ```bash
-conftest test input.json -p policy/ --all-namespaces
+conftest test input.json -p policy/
 ```
 
-`allow_review` 同样为 `true`——虽然 customer 那条分支不成立，但 admin 分支成立了，这就是逻辑或。
+同样通过——虽然 customer 那条分支不成立，但 admin 分支成立了，这就是逻辑或。
 
 ## 测试：两条路径都不满足
 
@@ -82,9 +86,9 @@ EOF
 ```
 
 ```bash
-conftest test input.json -p policy/ --all-namespaces
+conftest test input.json -p policy/
 ```
 
-这次 `allow_review` 为 `false`（使用了 `default` 默认值），因为两条路径都不满足。
+这次你会看到 `deny` 触发，输出"不允许评论"——因为两条路径都不满足，`allow_review` 为 `false`。
 
 > 💡 **要点**：在 Rego 中，通过声明多个同名规则来实现逻辑或。任意一条规则成立，变量就会被赋值。

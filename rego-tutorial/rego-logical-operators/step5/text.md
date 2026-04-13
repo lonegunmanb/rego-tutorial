@@ -41,6 +41,10 @@ can_post := true if {
   input.role == "member"
   input.days_since_registration >= 7
 }
+
+deny contains "不允许发帖" if {
+  not allow_post
+}
 EOF
 ```
 
@@ -57,10 +61,10 @@ EOF
 ```
 
 ```bash
-conftest test input.json -p policy/ --all-namespaces
+conftest test input.json -p policy/
 ```
 
-admin 已登录且未被封禁，应该允许发帖。
+检查通过——admin 已登录且未被封禁，允许发帖。
 
 ## 测试场景 2：新注册的 member
 
@@ -76,10 +80,10 @@ EOF
 ```
 
 ```bash
-conftest test input.json -p policy/ --all-namespaces
+conftest test input.json -p policy/
 ```
 
-虽然已登录且未被封禁，但注册天数不到 7 天，不允许发帖。
+你应该看到"不允许发帖"——虽然已登录且未被封禁，但注册天数不到 7 天。
 
 ## 测试场景 3：老 member
 
@@ -95,10 +99,10 @@ EOF
 ```
 
 ```bash
-conftest test input.json -p policy/ --all-namespaces
+conftest test input.json -p policy/
 ```
 
-已登录、未被封禁、注册满 7 天，允许发帖。
+检查通过——已登录、未被封禁、注册满 7 天，允许发帖。
 
 ## 测试场景 4：被封禁的 admin
 
@@ -113,10 +117,10 @@ EOF
 ```
 
 ```bash
-conftest test input.json -p policy/ --all-namespaces
+conftest test input.json -p policy/
 ```
 
-虽然是 admin，但被封禁了（`not input.banned == true` 不成立），不允许发帖。
+你应该看到"不允许发帖"——虽然是 admin，但被封禁了（`not input.banned == true` 不成立）。
 
 ## 测试场景 5：未登录的用户
 
@@ -130,9 +134,9 @@ EOF
 ```
 
 ```bash
-conftest test input.json -p policy/ --all-namespaces
+conftest test input.json -p policy/
 ```
 
-未登录（`input.authenticated == true` 不成立），即使是 admin 也不允许发帖。
+你应该看到"不允许发帖"——未登录（`input.authenticated == true` 不成立），即使是 admin 也不允许发帖。
 
 > 💡 **总结**：通过这个综合练习，我们看到了 Rego 三种逻辑运算的配合使用——规则体内的多个条件构成**逻辑与**，同名规则构成**逻辑或**，`not` 关键字实现**逻辑非**。
