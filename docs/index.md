@@ -7,7 +7,7 @@ hero:
   actions:
     - theme: brand
       text: 开始学习 →
-      link: /intro
+      link: /rules-and-assignment
     - theme: alt
       text: GitHub
       link: https://github.com/lonegunmanb/rego-tutorial
