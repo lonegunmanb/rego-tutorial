@@ -24,7 +24,8 @@ export default defineConfig({
       {
         text: '教程章节',
         items: [
-          { text: 'Rego 初识：规则与条件赋值', link: '/rules-and-assignment' }
+          { text: 'Rego 初识：规则与条件赋值', link: '/rules-and-assignment' },
+          { text: '逻辑运算符：与、或、非', link: '/logical-operators' }
         ],
       },
     ],

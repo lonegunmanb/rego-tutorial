@@ -1,5 +1,6 @@
 {
   "items": [
-    { "path": "rego-rules-and-assignment" }
+    { "path": "rego-rules-and-assignment" },
+    { "path": "rego-logical-operators" }
   ]
 }
