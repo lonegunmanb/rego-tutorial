@@ -60,6 +60,10 @@ result := "yes" if {
 result := "no" if {
     true
 }
+
+warn contains msg if {
+    msg := sprintf("result = %s", [result])
+}
 EOF
 ```
 
