@@ -1,0 +1,39 @@
+{
+  "title": "Rego 初识：规则与条件赋值",
+  "description": "学习 Rego 的基本概念，编写第一条规则，掌握条件赋值与 default 关键字",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "第一条 Rego 规则",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "条件赋值与 default 关键字",
+        "text": "step2/text.md"
+      },
+      {
+        "title": "用 conftest 执行策略检查",
+        "text": "step3/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        { "file": "setup-common.sh", "target": "/root", "chmod": "+x" }
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}

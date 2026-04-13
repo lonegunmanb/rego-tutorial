@@ -24,7 +24,7 @@ export default defineConfig({
       {
         text: '教程章节',
         items: [
-
+          { text: 'Rego 初识：规则与条件赋值', link: '/rules-and-assignment' }
         ],
       },
     ],

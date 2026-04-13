@@ -55,6 +55,7 @@ Every tutorial chapter MUST have a corresponding Killercoda hands-on scenario un
    title: <display text> # Sidebar label (falls back to first H1 heading)
    ---
    ```
+   **File naming**: Do NOT put sequence numbers in the filename (e.g. use `rules-and-assignment.md`, NOT `01-rules-and-assignment.md`). Chapter ordering is controlled solely by the `order` field in frontmatter.
 2. Create the matching Killercoda scenario under `rego-tutorial/<scenario-name>/` (see "Adding a New Killercoda Scenario" below).
 3. Link to the sandbox in the tutorial page:
    ```markdown
