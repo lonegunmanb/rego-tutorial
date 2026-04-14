@@ -29,7 +29,8 @@ export default defineConfig({
           { text: '路径引用与包（Package）', link: '/path-ref-and-package' },
           { text: '赋值与局部变量', link: '/assignment-and-local-vars' },
           { text: '规则条件详解与小测验', link: '/rule-conditions' },
-          { text: '迭代（Iteration）', link: '/iteration' }
+          { text: '迭代（Iteration）', link: '/iteration' },
+          { text: '集合声明与生成表达式', link: '/collection-comprehension' }
         ],
       },
     ],

@@ -1,0 +1,39 @@
+{
+  "title": "集合声明与生成表达式",
+  "description": "掌握 Rego 中集合的两种创建方式：JSON 语法直接枚举，以及 Set/Array/Object 生成表达式（comprehension）按条件动态生成集合",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "JSON 语法声明集合",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "Set 与 Array 生成表达式",
+        "text": "step2/text.md"
+      },
+      {
+        "title": "Object 生成表达式与内联用法",
+        "text": "step3/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        { "file": "setup-common.sh", "target": "/root", "chmod": "+x" }
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}
