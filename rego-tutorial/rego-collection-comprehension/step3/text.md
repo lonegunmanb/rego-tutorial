@@ -88,4 +88,6 @@ EOF
 opa eval -d policy/ -i input.json 'data.col' --format pretty
 ```
 
-`phone_count` 为 `0`，`has_phone` 为 `undefined`（因为 `count(phones) > 0` 条件不成立）。注意 `phone_count` 本身不会是 `undefined`，因为它使用了 Array comprehension，空数组的 `count` 是 `0`。
+你应该看到输出只有 `phone_count: 0`，而 `has_phone` **不出现在输出中**。
+
+这正是"undefined"在 OPA 中的表现方式——OPA 不会输出 `has_phone: undefined`，而是直接把未定义的规则从结果中省略。`phone_count` 本身始终有值（空数组的 `count` 是 `0`），因为 Array comprehension 在没有元素匹配时返回空数组 `[]`，而不是 `undefined`。
