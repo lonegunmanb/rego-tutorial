@@ -2,6 +2,7 @@
   "items": [
     { "path": "rego-rules-and-assignment" },
     { "path": "rego-logical-operators" },
-    { "path": "rego-path-ref-and-package" }
+    { "path": "rego-path-ref-and-package" },
+    { "path": "rego-assignment-and-local-vars" }
   ]
 }

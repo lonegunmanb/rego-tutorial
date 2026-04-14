@@ -1,0 +1,39 @@
+{
+  "title": "赋值与局部变量",
+  "description": "掌握 Rego 中各种数据类型的赋值方式、隐式 true 行为，以及局部变量的作用域",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "各种类型的赋值",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "隐式 true 与条件赋值",
+        "text": "step2/text.md"
+      },
+      {
+        "title": "局部变量与作用域",
+        "text": "step3/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        { "file": "setup-common.sh", "target": "/root", "chmod": "+x" }
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}
