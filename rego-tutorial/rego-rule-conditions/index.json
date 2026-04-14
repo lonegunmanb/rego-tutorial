@@ -1,0 +1,39 @@
+{
+  "title": "规则条件详解与小测验",
+  "description": "系统学习 Rego 四类规则条件，通过小测验巩固理解",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "常规条件与逻辑非条件",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "赋值语句条件与集合成员条件",
+        "text": "step2/text.md"
+      },
+      {
+        "title": "规则条件小测验",
+        "text": "step3/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        { "file": "setup-common.sh", "target": "/root", "chmod": "+x" }
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}

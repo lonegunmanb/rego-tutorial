@@ -27,7 +27,8 @@ export default defineConfig({
           { text: 'Rego 初识：规则与条件赋值', link: '/rules-and-assignment' },
           { text: '逻辑运算符：与、或、非', link: '/logical-operators' },
           { text: '路径引用与包（Package）', link: '/path-ref-and-package' },
-          { text: '赋值与局部变量', link: '/assignment-and-local-vars' }
+          { text: '赋值与局部变量', link: '/assignment-and-local-vars' },
+          { text: '规则条件详解与小测验', link: '/rule-conditions' }
         ],
       },
     ],
