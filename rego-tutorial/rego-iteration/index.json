@@ -1,0 +1,39 @@
+{
+  "title": "迭代（Iteration）",
+  "description": "掌握 Rego 中的迭代语法：some/in 迭代集合、数组、对象；键值对迭代；嵌套迭代；自由迭代与 _ 匿名变量",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "迭代集合与数组",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "键值对迭代与 _ 匿名变量",
+        "text": "step2/text.md"
+      },
+      {
+        "title": "嵌套迭代与自由迭代",
+        "text": "step3/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        { "file": "setup-common.sh", "target": "/root", "chmod": "+x" }
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}

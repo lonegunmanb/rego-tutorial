@@ -4,6 +4,7 @@
     { "path": "rego-logical-operators" },
     { "path": "rego-path-ref-and-package" },
     { "path": "rego-assignment-and-local-vars" },
-    { "path": "rego-rule-conditions" }
+    { "path": "rego-rule-conditions" },
+    { "path": "rego-iteration" }
   ]
 }
