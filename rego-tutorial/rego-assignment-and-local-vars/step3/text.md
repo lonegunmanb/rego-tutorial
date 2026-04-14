@@ -38,7 +38,7 @@ EOF
 
 ```bash
 echo '{}' > input.json
-conftest doc --combine -p policy/ -i input.json
+opa eval -d policy/ -i input.json 'data.main' --format pretty
 ```
 
 你应该看到 `formatted_name` 为 `"HELLO WORLD"`，`port_number` 为 `8080`。
@@ -69,7 +69,7 @@ EOF
 查看输出：
 
 ```bash
-conftest doc --combine -p policy/ -i input.json
+opa eval -d policy/ -i input.json 'data.main' --format pretty
 ```
 
 `result1` 是 `"FOO"`，`result2` 是 `"bar"`——两条规则中的 `raw` 和 `processed` 各自独立，互不干扰。

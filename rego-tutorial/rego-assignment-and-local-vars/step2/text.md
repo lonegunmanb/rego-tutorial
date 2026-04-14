@@ -49,7 +49,7 @@ cat > input.json << 'EOF'
   "score": 95
 }
 EOF
-conftest doc --combine -p policy/ -i input.json
+opa eval -d policy/ -i input.json 'data.main' --format pretty
 ```
 
 你会看到 `is_valid_explicit` 和 `is_valid_implicit` 都是 `true`，`grade` 是 `"A"`。
@@ -62,7 +62,7 @@ cat > input.json << 'EOF'
   "score": 75
 }
 EOF
-conftest doc --combine -p policy/ -i input.json
+opa eval -d policy/ -i input.json 'data.main' --format pretty
 ```
 
 现在 `grade` 变成了 `"B"`。
@@ -106,7 +106,7 @@ cat > input.json << 'EOF'
   "score": 95
 }
 EOF
-conftest doc --combine -p policy/ -i input.json
+opa eval -d policy/ -i input.json 'data.main' --format pretty
 ```
 
 换成 `viewer` 角色：
@@ -118,7 +118,7 @@ cat > input.json << 'EOF'
   "score": 75
 }
 EOF
-conftest doc --combine -p policy/ -i input.json
+opa eval -d policy/ -i input.json 'data.main' --format pretty
 ```
 
 > 💡 回忆一下第二章学过的内容——同名规则实现逻辑或。这里的 `access_level` 和 `allowed_actions` 各有两条同名规则，但由于 `admin` 和 `viewer` 的条件互斥，同一时刻只会有一条成立，不会触发 `eval_conflict_error`。

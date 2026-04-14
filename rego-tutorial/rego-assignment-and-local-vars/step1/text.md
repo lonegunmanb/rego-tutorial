@@ -34,11 +34,11 @@ server_config := {
 EOF
 ```
 
-用 conftest 查看这些规则的输出：
+用 `opa eval` 查看这些规则的输出：
 
 ```bash
 echo '{}' > input.json
-conftest doc --combine policy/
+opa eval -d policy/ -i input.json 'data.main' --format pretty
 ```
 
 你可以看到输出中包含了数字、字符串、数组和对象类型的规则值。
@@ -70,7 +70,7 @@ EOF
 查看输出：
 
 ```bash
-conftest doc --combine policy/
+opa eval -d policy/ -i input.json 'data.main' --format pretty
 ```
 
 注意 `upper_name` 引用了同一个包中另一条规则 `app_name` 的值，`service_url` 引用了 `server_config` 对象中的字段。在 Rego 中，同一个包内的规则可以互相引用。

@@ -8,4 +8,5 @@ mkdir -p /root/workspace/policy
 cd /root/workspace
 
 install_conftest
+install_opa
 finish_setup
