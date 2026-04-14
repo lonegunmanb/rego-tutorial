@@ -78,8 +78,8 @@ echo '{}' > input.json
 opa eval -d policy/ -i input.json 'data.partial' --format pretty
 ```
 
-> **要点总结**：
-> - `deny[msg] { ... }` 是 v0 中部分定义集合的语法
-> - 在 v1 中应写为 `deny contains msg if { ... }`
-> - `[]` 语法在 v1 中专门用于部分定义**对象**（`obj[key] := value`）
-> - 编写新策略时，请始终使用 v1 语法
+**要点总结**：
+- **deny[msg] { ... }** 是 v0 中部分定义集合的语法
+- 在 v1 中应写为 **deny contains msg if { ... }**
+- **[]** 语法在 v1 中专门用于部分定义**对象**（**obj[key] := value**）
+- 编写新策略时，请始终使用 v1 语法

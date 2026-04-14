@@ -43,7 +43,7 @@ opa eval -d policy/ -i input.json 'data.partial' --format pretty
 - `phones` 包含 `"a-phone"` 和 `"b-phone"`
 - `cars` 是空集合 `[]`（OPA 将空集合序列化为 `[]`），而**不是 undefined**
 
-> **关键点**：使用部分定义语法时，即使没有任何规则成功，规则的值也是**空集合 `{}`**（或空对象 `{}`），而不是 `undefined`。这一点与完整定义规则不同——完整定义规则在条件不满足时是 `undefined`。
+**关键点**：使用部分定义语法时，即使没有任何规则成功，规则的值也是**空集合**（或空对象），而不是 **undefined**。这一点与完整定义规则不同——完整定义规则在条件不满足时是 **undefined**。
 
 ## 批量部分定义 Object
 
