@@ -43,7 +43,7 @@ EOF
 opa eval -d policy/ -i input.json 'data.col' --format pretty
 ```
 
-输入中索引 0 是 `"a-phone"`，索引 1 是 `"b-phone"`，所以 `phone_map` 为 `{"x-0": "a-phone", "x-1": "b-phone"}`。`car_map` 为 `{}`。
+输入中索引 0 是 `"a-phone"`，索引 1 是 `"b-phone"`，所以 `phone_map` 输出为对象 `{"x-0": "a-phone", "x-1": "b-phone"}`。`car_map` 没有任何元素满足条件，输出为空对象 `{}`（注意：这里是空**对象**，不是空集合；OPA 将空对象输出为 `{}`，而空集合输出为 `[]`）。
 
 ## 生成表达式作为内联条件
 
