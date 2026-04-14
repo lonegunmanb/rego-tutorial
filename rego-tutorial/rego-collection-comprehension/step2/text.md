@@ -44,7 +44,7 @@ EOF
 opa eval -d policy/ -i input.json 'data.col' --format pretty
 ```
 
-你会看到 `phones` 是 `{"a-phone", "b-phone"}`，而 `cars` 是 `{}`（空集合）而不是 `undefined`。
+你会看到 `phones` 是 `["a-phone", "b-phone"]`（OPA 将集合序列化为已排序的数组输出），而 `cars` 是 `[]`（空集合）而不是 `undefined`。
 
 > **这与普通条件规则不同**：普通条件规则在条件不满足时是 `undefined`，而生成表达式永远会产生一个结果（可能为空集合/空数组/空对象）。
 
@@ -106,4 +106,4 @@ EOF
 opa eval -d policy/ -i input.json 'data.col' --format pretty
 ```
 
-`unique` 自动去重为 `{1, 2, 3}`，`ordered` 保留原始顺序 `[3, 1, 2, 1, 3]`。
+`unique` 自动去重并按升序排列，输出为 `[1, 2, 3]`（OPA 将集合序列化为已排序的数组）。`ordered` 保留原始顺序和重复，输出为 `[3, 1, 2, 1, 3]`。
