@@ -31,7 +31,8 @@ export default defineConfig({
           { text: '规则条件详解与小测验', link: '/rule-conditions' },
           { text: '迭代（Iteration）', link: '/iteration' },
           { text: '集合声明与生成表达式', link: '/collection-comprehension' },
-          { text: '部分定义（Partial Definition）', link: '/partial-definition' }
+          { text: '部分定义（Partial Definition）', link: '/partial-definition' },
+          { text: '内建函数与用户定义函数', link: '/builtin-and-functions' }
         ],
       },
     ],

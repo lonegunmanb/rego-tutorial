@@ -1,0 +1,39 @@
+{
+  "title": "内建函数与用户定义函数",
+  "description": "掌握 Rego 常用内建函数（比较、数学、聚合、字符串、类型转换、glob、sprintf），以及自定义函数语法和函数重载实现逻辑或",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "常用内建函数（上）：比较、数学、聚合",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "常用内建函数（下）：字符串、类型转换、glob、sprintf",
+        "text": "step2/text.md"
+      },
+      {
+        "title": "用户定义函数与函数重载",
+        "text": "step3/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        { "file": "setup-common.sh", "target": "/root", "chmod": "+x" }
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}
