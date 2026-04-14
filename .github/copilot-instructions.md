@@ -59,7 +59,7 @@ Every tutorial chapter MUST have a corresponding Killercoda hands-on scenario un
 2. Create the matching Killercoda scenario under `rego-tutorial/<scenario-name>/` (see "Adding a New Killercoda Scenario" below).
 3. Link to the sandbox in the tutorial page:
    ```markdown
-   <KillercodaEmbed src="https://killercoda.com/<account>/course/rego-tutorial/<SCENARIO_NAME>" />
+   <KillercodaEmbed src="https://killercoda.com/rego-tutorial/course/rego-tutorial/<SCENARIO_NAME>" />
    ```
 4. Run `npm run sync-sidebar` (or it runs automatically during `npm run build` via the `prebuild` hook).
 

@@ -116,4 +116,4 @@ allow_delete := true if {
 
 ## 动手实验
 
-<KillercodaEmbed src="https://killercoda.com/lonegunmanb/course/rego-tutorial/rego-path-ref-and-package" />
+<KillercodaEmbed src="https://killercoda.com/rego-tutorial/course/rego-tutorial/rego-path-ref-and-package" />
