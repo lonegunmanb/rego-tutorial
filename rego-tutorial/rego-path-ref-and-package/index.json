@@ -1,0 +1,39 @@
+{
+  "title": "路径引用与包（Package）",
+  "description": "理解无效路径引用的行为，掌握 Package 声明与跨包引用",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "无效的路径引用",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "判定属性是否存在",
+        "text": "step2/text.md"
+      },
+      {
+        "title": "Package 与跨包引用",
+        "text": "step3/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        { "file": "setup-common.sh", "target": "/root", "chmod": "+x" }
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}
