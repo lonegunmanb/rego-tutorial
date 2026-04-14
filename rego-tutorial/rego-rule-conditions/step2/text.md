@@ -51,6 +51,8 @@ opa eval -d policy/ -i input.json 'data.play' --format pretty
 这个区别非常微妙但极其重要：
 
 ```bash
+rm -f policy/*.rego
+
 cat > policy/assign_vs_cond.rego << 'EOF'
 package play
 
@@ -81,73 +83,83 @@ opa eval -d policy/ -i input.json 'data.play' --format pretty
 使用 `in` 关键字检查成员是否属于集合：
 
 ```bash
+rm -f policy/*.rego
+
 cat > policy/membership.rego << 'EOF'
 package play
 
 import rego.v1
 
-allowed_roles := {"admin", "editor", "viewer"}
-items := ["apple", "banana", "cherry"]
-config := {"host": "localhost", "port": 8080}
-
 # 检查 set 成员
 check_set if {
-  "admin" in allowed_roles     # 成功
+  "admin" in input.allowed_roles
 }
 
 # 检查 array 元素（按值检查）
 check_array if {
-  "banana" in items            # 成功
+  "banana" in input.items
 }
 
 # 检查 object 的值（不是键！）
 check_object_value if {
-  "localhost" in config        # 成功：检查的是值
+  "localhost" in input.config
 }
 
 # 常见错误：用 in 检查 object 的键会失败
 check_object_key_fail if {
-  "host" in config             # 失败！"host" 是键，不是值
+  "host" in input.config
 }
 EOF
 ```
 
 ```bash
+cat > input.json << 'EOF'
+{
+  "allowed_roles": ["admin", "editor", "viewer"],
+  "items": ["apple", "banana", "cherry"],
+  "config": {"host": "localhost", "port": 8080}
+}
+EOF
 opa eval -d policy/ -i input.json 'data.play' --format pretty
 ```
 
-`check_set`、`check_array`、`check_object_value` 成功，`check_object_key_fail` 不会出现。
+`check_set`、`check_array`、`check_object_value` 成功，`check_object_key_fail` 不会出现。`"host"` 是 `config` 的键，但 `in` 检查的是**值**（`"localhost"` 和 `8080`），所以失败。
 
 ## 用 some 检查键或索引是否存在
 
 ```bash
+rm -f policy/*.rego
+
 cat > policy/some_check.rego << 'EOF'
 package play
 
 import rego.v1
 
-items := ["apple", "banana", "cherry"]
-config := {"host": "localhost", "port": 8080}
+# 检查 input 中数组的索引是否存在
+has_index_0 if { some 0, _ in input.items }
+has_index_5 if { some 5, _ in input.items }
 
-# 检查索引是否存在
-has_index_0 if { some 0, _ in items }
-has_index_5 if { some 5, _ in items }    # 失败：索引 5 不存在
-
-# 检查键是否存在
-has_key_host if { some "host", _ in config }
-has_key_name if { some "name", _ in config }  # 失败：键 "name" 不存在
+# 检查 input 中对象的键是否存在
+has_key_host if { some "host", _ in input.config }
+has_key_name if { some "name", _ in input.config }
 
 # 反模式：用 [] 检查存在性的坑
-bad_items := ["apple", false]
 bad_check if {
-  bad_items[0]    # 成功："apple"
-  bad_items[1]    # 失败！值为 false
+  input.bad_items[0]    # 成功："apple"
+  input.bad_items[1]    # 失败！值为 false
 }
 EOF
 ```
 
 ```bash
+cat > input.json << 'EOF'
+{
+  "items": ["apple", "banana", "cherry"],
+  "config": {"host": "localhost", "port": 8080},
+  "bad_items": ["apple", false]
+}
+EOF
 opa eval -d policy/ -i input.json 'data.play' --format pretty
 ```
 
-`has_index_0`、`has_key_host` 成功。`has_index_5`、`has_key_name`、`bad_check` 都不会出现。注意 `bad_check` 里 `bad_items[1]` 的值是 `false`，所以条件失败——这就是为什么推荐用 `some index, _ in array` 而非 `array[index]`。
+`has_index_0`、`has_key_host` 成功。`has_index_5`、`has_key_name`、`bad_check` 都不会出现。注意 `bad_check` 里 `input.bad_items[1]` 的值是 `false`，所以条件失败——这就是为什么推荐用 `some index, _ in array` 而非 `array[index]`。

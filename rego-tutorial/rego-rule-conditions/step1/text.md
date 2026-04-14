@@ -92,6 +92,8 @@ opa eval -d policy/ -i input.json 'data.play' --format pretty
 这一点非常重要且反直觉。让我们分别单独验证：
 
 ```bash
+rm -f policy/*.rego
+
 cat > policy/not_detail.rego << 'EOF'
 package play
 
