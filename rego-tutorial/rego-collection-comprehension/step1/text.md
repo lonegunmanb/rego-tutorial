@@ -38,8 +38,9 @@ opa eval -d policy/ -i input.json 'data.col' --format pretty
 ```
 
 注意输出中：
-- 数组用 `[...]`，集合用 `{...}` 但元素之间没有 `:`
-- 集合的顺序可能与声明顺序不同（集合是无序的）
+- 数组 `phones_array` 和集合 `product_set` 在输出里看起来都是 `[...]`——因为 JSON 没有原生的 set 类型，OPA 在输出时把集合序列化为已排序的数组
+- 对象 `catalog_object` 输出为 `{"key": value}` 形式
+- 集合的顺序按元素排序，而不是声明顺序；并且集合会自动去重
 
 ## 集合成员可以是任意 Rego 表达式
 
