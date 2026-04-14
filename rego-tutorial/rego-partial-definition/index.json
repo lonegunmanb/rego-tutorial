@@ -1,0 +1,43 @@
+{
+  "title": "部分定义（Partial Definition）",
+  "description": "掌握 Rego 中用 contains 和 [] 语法逐步构建集合与对象的部分定义技术，理解 v0 deny[msg] 语法的本质",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "contains 部分定义 Set",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "[] 部分定义 Object 与 v0 语法对比",
+        "text": "step2/text.md"
+      },
+      {
+        "title": "带条件的批量部分定义",
+        "text": "step3/text.md"
+      },
+      {
+        "title": "复杂表达式与数组限制",
+        "text": "step4/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        { "file": "setup-common.sh", "target": "/root", "chmod": "+x" }
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}
