@@ -8,6 +8,7 @@
     { "path": "rego-iteration" },
     { "path": "rego-collection-comprehension" },
     { "path": "rego-partial-definition" },
-    { "path": "rego-builtin-and-functions" }
+    { "path": "rego-builtin-and-functions" },
+    { "path": "rego-every-iteration" }
   ]
 }
