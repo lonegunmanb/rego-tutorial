@@ -33,7 +33,9 @@ export default defineConfig({
           { text: '集合声明与生成表达式', link: '/collection-comprehension' },
           { text: '部分定义（Partial Definition）', link: '/partial-definition' },
           { text: '内建函数与用户定义函数', link: '/builtin-and-functions' },
-          { text: 'every 全量迭代', link: '/every-iteration' }
+          { text: 'every 全量迭代', link: '/every-iteration' },
+          { text: '常见陷阱（上）：类型与比较', link: '/common-pitfalls-types' },
+          { text: '常见陷阱（下）：引用与迭代', link: '/common-pitfalls-refs' }
         ],
       },
     ],

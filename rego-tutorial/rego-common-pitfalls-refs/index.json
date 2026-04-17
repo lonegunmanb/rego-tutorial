@@ -1,0 +1,43 @@
+{
+  "title": "常见陷阱（下）：引用与迭代",
+  "description": "掌握 Rego 中未声明迭代变量、无效路径引用、错别字、输入预校验和反转含迭代规则等常见陷阱",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "未声明迭代变量陷阱",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "无效路径引用与 exists 技巧",
+        "text": "step2/text.md"
+      },
+      {
+        "title": "错别字与输入数据预校验",
+        "text": "step3/text.md"
+      },
+      {
+        "title": "反转含迭代规则的陷阱",
+        "text": "step4/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        { "file": "setup-common.sh", "target": "/root", "chmod": "+x" }
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}

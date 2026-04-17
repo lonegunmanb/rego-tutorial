@@ -9,6 +9,8 @@
     { "path": "rego-collection-comprehension" },
     { "path": "rego-partial-definition" },
     { "path": "rego-builtin-and-functions" },
-    { "path": "rego-every-iteration" }
+    { "path": "rego-every-iteration" },
+    { "path": "rego-common-pitfalls-types" },
+    { "path": "rego-common-pitfalls-refs" }
   ]
 }

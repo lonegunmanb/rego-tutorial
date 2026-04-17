@@ -1,0 +1,43 @@
+{
+  "title": "常见陷阱（上）：类型与比较",
+  "description": "掌握 Rego 中集合/对象比较、跨类型比较、部分定义默认值和命名遮蔽等常见陷阱",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "集合与对象的比较陷阱",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "跨类型比较与类型安全函数",
+        "text": "step2/text.md"
+      },
+      {
+        "title": "部分定义的默认值陷阱",
+        "text": "step3/text.md"
+      },
+      {
+        "title": "命名遮蔽陷阱",
+        "text": "step4/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        { "file": "setup-common.sh", "target": "/root", "chmod": "+x" }
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}
