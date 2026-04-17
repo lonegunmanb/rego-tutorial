@@ -37,11 +37,11 @@ EOF
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-`output2__string_zero_gt_three` 为 `true`——字符串 `"0"` 大于数值 `3`，因为字符串类型永远大于数值类型。
+**output2__string_zero_gt_three** 为 **true**——字符串 **"0"** 大于数值 **3**，因为字符串类型永远大于数值类型。
 
 ## 在实际场景中的危害
 
-假设我们有一条策略：当用户的 `access_level` 大于 3 时允许访问。如果输入数据中 `access_level` 意外地是字符串类型：
+假设我们有一条策略：当用户的 **access_level** 大于 3 时允许访问。如果输入数据中 **access_level** 意外地是字符串类型：
 
 ```bash
 rm -f policy/*.rego
@@ -70,20 +70,20 @@ echo '{"access_level": 5}' > input.json
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-两条规则都输出 `true`，看起来没问题。
+两条规则都输出 **true**，看起来没问题。
 
-现在模拟脏数据——`access_level` 是字符串 `"0"`：
+现在模拟脏数据——**access_level** 是字符串 **"0"**：
 
 ```bash
 echo '{"access_level": "0"}' > input.json
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-`allow_unsafe` 为 `true`（因为字符串 > 数值），而 `allow_safe` 不出现（`is_number` 阻止了比较）。在生产环境中，这可能意味着一个本不该有权限的用户获得了访问权。
+**allow_unsafe** 为 **true**（因为字符串 > 数值），而 **allow_safe** 不出现（**is_number** 阻止了比较）。在生产环境中，这可能意味着一个本不该有权限的用户获得了访问权。
 
 ## 定义类型安全比较函数
 
-每次都手动加 `is_number` 检查很容易遗漏。更好的方式是封装成类型安全比较函数：
+每次都手动加 **is_number** 检查很容易遗漏。更好的方式是封装成类型安全比较函数：
 
 ```bash
 rm -f policy/*.rego
@@ -126,7 +126,7 @@ echo '{"access_level": 5}' > input.json
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-`allow` 为 `true`。
+**allow** 为 **true**。
 
 用字符串测试：
 
@@ -135,7 +135,7 @@ echo '{"access_level": "0"}' > input.json
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-`allow` 不出现——类型验证阻止了比较。注意观察控制台可能输出的 `WARN` 信息。
+**allow** 不出现——类型验证阻止了比较。注意观察控制台可能输出的 **WARN** 信息。
 
 ```bash
 echo '{}' > input.json

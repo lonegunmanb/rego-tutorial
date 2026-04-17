@@ -53,7 +53,7 @@ EOF
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-只有 `output1__correct` 为 `true`。其他三条规则因为路径无效而静默失败——没有任何错误提示！
+只有 **output1__correct** 为 **true**。其他三条规则因为路径无效而静默失败——没有任何错误提示！
 
 在实际项目中，这种错误可能需要很长时间才能被发现。
 
@@ -137,7 +137,7 @@ EOF
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-`allow` 为 `true`，`input_is_valid` 为 `true`。
+**allow** 为 **true**，**input_is_valid** 为 **true**。
 
 用非法数据测试（price 是字符串）：
 
@@ -156,7 +156,7 @@ EOF
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-`allow` 不出现，`deny` 为 `"invalid input data"`——预校验在策略执行前就拦截了非法数据。
+**allow** 不出现，**deny** 为 **"invalid input data"**——预校验在策略执行前就拦截了非法数据。
 
 用空数据测试：
 

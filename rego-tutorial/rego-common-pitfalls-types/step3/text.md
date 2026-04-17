@@ -34,11 +34,11 @@ EOF
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-输出是空对象 `{}`——两条规则的变量都未被赋值。
+输出是空对象 **{}**——两条规则的变量都未被赋值。
 
-## `default` 显式默认值
+## default 显式默认值
 
-我们可以用 `default` 显式设置默认值：
+我们可以用 **default** 显式设置默认值：
 
 ```bash
 rm -f policy/*.rego
@@ -63,7 +63,7 @@ EOF
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-现在 `output1` 为 `100`，`output2` 为 `{"key1": 100}`——显式默认值生效了。
+现在 **output1** 为 **100**，**output2** 为 **{"key1": 100}**——显式默认值生效了。
 
 ## 部分定义的隐式默认值
 
@@ -92,7 +92,7 @@ EOF
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-注意观察输出：`output1__partial` 的值是 `{}`（空对象），而 `output2__complete` 完全不存在！
+注意观察输出：**output1__partial** 的值是 **{}**（空对象），而 **output2__complete** 完全不存在！
 
 ## 隐式默认值的影响
 
@@ -131,7 +131,7 @@ EOF
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-`output3__partial_exists` 为 `true`——因为 `{}` 空对象是一个有效的非 `false` 值，作为条件时被视为"成功"。而 `output4__complete_exists` 不出现。
+**output3__partial_exists** 为 **true**——因为 **{}** 空对象是一个有效的非 **false** 值，作为条件时被视为"成功"。而 **output4__complete_exists** 不出现。
 
 ## 对 set 的部分定义同样如此
 
@@ -164,6 +164,6 @@ EOF
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-`has_denied_rules` 为 `true`（空集合作为条件为真），而 `has_real_denied` 不出现（`count` 为 0）。
+**has_denied_rules** 为 **true**（空集合作为条件为真），而 **has_real_denied** 不出现（**count** 为 0）。
 
-**教训**：如果要检查部分定义的集合是否"真的有内容"，用 `count(xxx) > 0`，而不是直接把它放在条件中。
+**教训**：如果要检查部分定义的集合是否"真的有内容"，用 **count(xxx) > 0**，而不是直接把它放在条件中。

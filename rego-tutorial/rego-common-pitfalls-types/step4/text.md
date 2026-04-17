@@ -37,7 +37,7 @@ EOF
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-`output1` 为 `true`，`output2` 不出现——因为局部变量 `var1` 的值是 `"goodbye"`，不等于 `"hello"`。
+**output1** 为 **true**，**output2** 不出现——因为局部变量 **var1** 的值是 **"goodbye"**，不等于 **"hello"**。
 
 ## 自定义函数遮蔽内建函数
 
@@ -72,11 +72,11 @@ EOF
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-`output1` 的值是 `"ab"`——而不是期望的 `"abc"`！自定义的 `replace` 函数只做了简单的"整体匹配替换"，`"ab"` 不等于 `"b"`（`item != old`），所以返回了原值。
+**output1** 的值是 **"ab"**——而不是期望的 **"abc"**！自定义的 **replace** 函数只做了简单的"整体匹配替换"，**"ab"** 不等于 **"b"**（**item != old**），所以返回了原值。
 
 ## 遮蔽内建操作符
 
-Rego 的比较操作符本质上也是函数。例如 `>` 的函数名是 `gt`。如果你不小心定义了一个叫 `gt` 的函数：
+Rego 的比较操作符本质上也是函数。例如 **>** 的函数名是 **gt**。如果你不小心定义了一个叫 **gt** 的函数：
 
 ```bash
 rm -f policy/*.rego
@@ -97,7 +97,7 @@ EOF
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-`output1` 的值不是 `false`，而是 `"Gran Turismo 7 (2022)"`！`>` 操作符被自定义的 `gt` 函数劫持了。
+**output1** 的值不是 **false**，而是 **"Gran Turismo 7 (2022)"**！**>** 操作符被自定义的 **gt** 函数劫持了。
 
 ## 为什么 Rego 允许这种行为？
 
@@ -143,9 +143,9 @@ EOF
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-`output1` 为 `"a"`，`output2` 为 `true`，`output3` 为 `"abc"`——自定义函数和内建函数各司其职，互不干扰。
+**output1** 为 **"a"**，**output2** 为 **true**，**output3** 为 **"abc"**——自定义函数和内建函数各司其职，互不干扰。
 
 **最佳实践**：
-- 避免使用 `gt`、`lt`、`gte`、`lte`、`eq`、`neq`、`replace`、`count`、`max`、`min` 等与内建名称相同的函数名
+- 避免使用 **gt**、**lt**、**gte**、**lte**、**eq**、**neq**、**replace**、**count**、**max**、**min** 等与内建名称相同的函数名
 - 为自定义函数加上有意义的前缀（如业务领域前缀）
-- 如果怀疑名称冲突，可以用 `opa check --strict` 检查
+- 如果怀疑名称冲突，可以用 **opa check --strict** 检查

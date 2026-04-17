@@ -32,7 +32,7 @@ EOF
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-`has_a` 为 `true`。
+**has_a** 为 **true**。
 
 ## 错误的反转方式
 
@@ -65,7 +65,7 @@ EOF
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-两条规则都是 `true`！因为数组里有 `"b"`，`"b" != "a"` 成立。但 `["a", "b"]` 明明包含 `"a"`，"不包含 a"应该是 `false` 才对。
+两条规则都是 **true**！因为数组里有 **"b"**，**"b" != "a"** 成立。但 **["a", "b"]** 明明包含 **"a"**，"不包含 a"应该是 **false** 才对。
 
 ## 用不同数组验证真值表
 
@@ -102,66 +102,66 @@ not_has_a_v2 if {
 EOF
 ```
 
-用 `["a"]` 测试：
+用 **["a"]** 测试：
 
 ```bash
 echo '{"arr": ["a"]}' > input.json
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-- `has_a`: `true` ✅
-- `has_non_a`: 不出现（只有 `"a"`，没有非 `a` 元素）
-- `not_has_a`: 不出现 ✅
-- `not_has_a_v2`: 不出现 ✅
+- **has_a**: **true** ✅
+- **has_non_a**: 不出现（只有 **"a"**，没有非 **a** 元素）
+- **not_has_a**: 不出现 ✅
+- **not_has_a_v2**: 不出现 ✅
 
-用 `["b"]` 测试：
+用 **["b"]** 测试：
 
 ```bash
 echo '{"arr": ["b"]}' > input.json
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-- `has_a`: 不出现
-- `has_non_a`: `true`
-- `not_has_a`: `true` ✅
-- `not_has_a_v2`: `true` ✅
+- **has_a**: 不出现
+- **has_non_a**: **true**
+- **not_has_a**: **true** ✅
+- **not_has_a_v2**: **true** ✅
 
-用 `["a", "b"]` 测试——关键场景：
+用 **["a", "b"]** 测试——关键场景：
 
 ```bash
 echo '{"arr": ["a", "b"]}' > input.json
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-- `has_a`: `true` ✅
-- `has_non_a`: `true`（**这是错误的"不包含 a"实现**）
-- `not_has_a`: 不出现 ✅
-- `not_has_a_v2`: 不出现 ✅
+- **has_a**: **true** ✅
+- **has_non_a**: **true**（**这是错误的"不包含 a"实现**）
+- **not_has_a**: 不出现 ✅
+- **not_has_a_v2**: 不出现 ✅
 
-用空数组 `[]` 测试：
+用空数组 **[]** 测试：
 
 ```bash
 echo '{"arr": []}' > input.json
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-- `has_a`: 不出现
-- `has_non_a`: 不出现
-- `not_has_a`: `true` ✅
-- `not_has_a_v2`: `true` ✅（`every` 对空集合返回 `true`）
+- **has_a**: 不出现
+- **has_non_a**: 不出现
+- **not_has_a**: **true** ✅
+- **not_has_a_v2**: **true** ✅（**every** 对空集合返回 **true**）
 
 ## 总结真值表
 
-| 规则 | 含义 | `["a"]` | `["b"]` | `["a","b"]` | `[]` |
+| 规则 | 含义 | **["a"]** | **["b"]** | **["a","b"]** | **[]** |
 |------|------|---------|---------|-------------|------|
-| `has_a` | 包含 a | ✅ | ❌ | ✅ | ❌ |
-| `has_non_a`（错误） | 包含非 a | ❌ | ✅ | ✅ | ❌ |
-| `not_has_a` | 不包含 a | ❌ | ✅ | ❌ | ✅ |
-| `not_has_a_v2` | 不包含 a | ❌ | ✅ | ❌ | ✅ |
+| **has_a** | 包含 a | ✅ | ❌ | ✅ | ❌ |
+| **has_non_a**（错误） | 包含非 a | ❌ | ✅ | ✅ | ❌ |
+| **not_has_a** | 不包含 a | ❌ | ✅ | ❌ | ✅ |
+| **not_has_a_v2** | 不包含 a | ❌ | ✅ | ❌ | ✅ |
 
 **核心要点**：
-- `some item in arr; item != "a"` → "存在一个不是 a 的" ≠ "不包含 a"
-- 正确的"不包含 a"要用 `not has_a` 或 `every item { item != "a" }`
+- **some item in arr; item != "a"** → "存在一个不是 a 的" ≠ "不包含 a"
+- 正确的"不包含 a"要用 **not has_a** 或 **every item { item != "a" }**
 - 这是声明式语言中最常见的逻辑陷阱，务必在编写策略时特别留意
 
 ```bash

@@ -30,7 +30,7 @@ echo '{"access_level": 1}' > input.json
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-`deny_access` 为 `true`——正确。
+**deny_access** 为 **true**——正确。
 
 现在用空数据测试：
 
@@ -39,7 +39,7 @@ echo '{}' > input.json
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-输出为空！`deny_access` 未定义——`input.access_level` 是无效路径引用，规则直接失败了。攻击者可以通过发送空数据绕过检查！
+输出为空！**deny_access** 未定义——**input.access_level** 是无效路径引用，规则直接失败了。攻击者可以通过发送空数据绕过检查！
 
 ## 用 not 检测缺失字段的局限
 
@@ -68,16 +68,16 @@ echo '{}' > input.json
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-`deny_access` 为 `"Error: access_level missing"`——看起来对了。
+**deny_access** 为 **"Error: access_level missing"**——看起来对了。
 
-但如果 `access_level` 是布尔 `false` 呢？
+但如果 **access_level** 是布尔 **false** 呢？
 
 ```bash
 echo '{"access_level": false}' > input.json
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-也报了 `"Error: access_level missing"`！因为 `not false` 是 `true`，把"值为 false"误判成了"字段不存在"。
+也报了 **"Error: access_level missing"**！因为 **not false** 是 **true**，把"值为 false"误判成了"字段不存在"。
 
 ## exists 函数：安全判断路径存在
 
@@ -105,15 +105,15 @@ echo '{"is_active": false, "name": "Alice"}' > input.json
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-- `output1__missing` 不出现（`input.admin` 不存在 → 函数调用失败）
-- `output2__false` 为 `true`（`false == false` 成立）
-- `output3__true` 为 `true`（`"Alice" == "Alice"` 成立）
+- **output1__missing** 不出现（**input.admin** 不存在 → 函数调用失败）
+- **output2__false** 为 **true**（**false == false** 成立）
+- **output3__true** 为 **true**（**"Alice" == "Alice"** 成立）
 
-`exists` 正确地区分了"字段不存在"和"值为 false"。
+**exists** 正确地区分了"字段不存在"和"值为 false"。
 
 ## not x == x：判断路径不存在
 
-为什么不用 `not exists(input.admin)`？因为当路径无效时，函数调用直接失败，`not` 无法反转函数调用的失败。但 `==` 操作符是例外——它在包含无效路径引用时返回 `false`，而不是直接失败：
+为什么不用 **not exists(input.admin)**？因为当路径无效时，函数调用直接失败，**not** 无法反转函数调用的失败。但 **==** 操作符是例外——它在包含无效路径引用时返回 **false**，而不是直接失败：
 
 ```bash
 rm -f policy/*.rego
@@ -141,9 +141,9 @@ echo '{}' > input.json
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-`admin_absent` 为 `true`——`not x == x` 方式正确工作了。
+**admin_absent** 为 **true**——**not x == x** 方式正确工作了。
 
-`admin_absent_wrong` 也看看是否出现——由于无效路径引用传入函数调用时触发的是直接失败而非返回 `false`，`not` 无法对其反转。
+**admin_absent_wrong** 也看看是否出现——由于无效路径引用传入函数调用时触发的是直接失败而非返回 **false**，**not** 无法对其反转。
 
 验证有值时是否正确：
 
@@ -152,7 +152,7 @@ echo '{"admin": false}' > input.json
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-`admin_absent` 不出现——字段存在（即使值为 `false`），`false == false` 为 `true`，被 `not` 反转后不成立。
+**admin_absent** 不出现——字段存在（即使值为 **false**），**false == false** 为 **true**，被 **not** 反转后不成立。
 
 ```bash
 echo '{}' > input.json

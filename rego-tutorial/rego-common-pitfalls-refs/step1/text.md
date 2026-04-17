@@ -31,11 +31,11 @@ EOF
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-`output1__has_a` 为 `true`——`i` 被自动创建为局部变量，遍历了数组的所有索引。
+**output1__has_a** 为 **true**——**i** 被自动创建为局部变量，遍历了数组的所有索引。
 
 ## 当变量名冲突时
 
-现在，我们模拟同一个包中另一个文件定义了一个包级变量 `x`：
+现在，我们模拟同一个包中另一个文件定义了一个包级变量 **x**：
 
 ```bash
 rm -f policy/*.rego
@@ -75,9 +75,9 @@ EOF
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-`output1__has_a_with_i` 为 `true`，而 `output2__has_a_with_x` **不出现**！
+**output1__has_a_with_i** 为 **true**，而 **output2__has_a_with_x** **不出现**！
 
-原因：`x` 在包级作用域已经被定义为 `2`，所以 `array1[x]` 实际上是 `array1[2]`（即 `"c"`），`"c" == "a"` 当然不成立。
+原因：**x** 在包级作用域已经被定义为 **2**，所以 **array1[x]** 实际上是 **array1[2]**（即 **"c"**），**"c" == "a"** 当然不成立。
 
 ## 用 some 解决问题
 
@@ -116,6 +116,6 @@ EOF
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-三种方式都输出 `true`——显式声明迭代变量后，包级的 `x` 不再影响迭代行为。
+三种方式都输出 **true**——显式声明迭代变量后，包级的 **x** 不再影响迭代行为。
 
-**规则**：始终用 `some` 声明迭代变量，或使用 `_` 匿名变量。永远不要依赖"自动创建局部变量"的行为。
+**规则**：始终用 **some** 声明迭代变量，或使用 **_** 匿名变量。永远不要依赖"自动创建局部变量"的行为。
