@@ -13,7 +13,7 @@ export default {
   },
   Layout() {
     return h(DefaultTheme.Layout, null, {
-      'doc-after': () => h(SponsorBanner),
+      'doc-before': () => h(SponsorBanner),
     })
   },
 }
