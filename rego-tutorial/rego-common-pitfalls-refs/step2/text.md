@@ -55,7 +55,7 @@ deny_access if {
 }
 
 # 尝试用 not 检测字段缺失
-deny_access := "Error: access_level missing" if {
+access_level_missing if {
   not input.access_level
 }
 EOF
@@ -68,7 +68,7 @@ echo '{}' > input.json
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-**deny_access** 为 **"Error: access_level missing"**——看起来对了。
+**access_level_missing** 为 **true**——看起来对了。
 
 但如果 **access_level** 是布尔 **false** 呢？
 
@@ -77,7 +77,7 @@ echo '{"access_level": false}' > input.json
 opa eval -d policy/ -i input.json 'data.pitfalls' --format pretty
 ```
 
-也报了 **"Error: access_level missing"**！因为 **not false** 是 **true**，把"值为 false"误判成了"字段不存在"。
+**access_level_missing** 也是 **true**！因为 **not false** 是 **true**，把"值为 false"误判成了"字段不存在"。**not** 无法区分"字段不存在"和"字段值为 false"这两种情况。
 
 ## exists 函数：安全判断路径存在
 
